@@ -4,6 +4,12 @@ Edit these and every agent retunes. All currency CAD.
 Values below are data-grounded starting points (blended margin ~24-27%, TACOS ~4.8%).
 Tune as the system runs.
 
+> ENGINE: the hard ACOS/TACOS breach ceilings the money CLI enforces live in
+> `engine/config/thresholds.toml` (the machine mirror). The tiered `target_acos_*`
+> below drive the PPC skill's tier-aware *recommendations*; keep `tacos_ceiling` and the
+> CLI's `acos_ceiling_pct`/`tacos_ceiling_pct` in sync. Money numbers come from the
+> engine CLI, never prose math (see datadoe-query → "Money math").
+
 ## Advertising  (ACOS targets sit below margin so ads stay profitable)
 - target_acos_hero: 35%       # defend rank, accept higher ACOS
 - target_acos_maintain: 28%

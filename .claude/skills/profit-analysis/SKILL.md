@@ -7,6 +7,13 @@ description: Playbook for profit, margin, ROI, fee drag, and customer/repeat ana
 
 Load `datadoe-query` and `anabtawi-context` first.
 
+> **NUMBERS COME FROM THE ENGINE, NOT PROSE (CLAUDE.md hard rule 4).** Per-SKU
+> ACOS/TACOS/ROI/margin and threshold flags are computed by the tested CLI (see
+> `datadoe-query` → "Money math": `groupBy sku + *_sum` → `engine/scripts/answer_tacos.py`).
+> You interpret its typed JSON and write the narrative; you never re-derive the ratio in
+> chat. Top-line trend (sales/profit/ROI/TACOS over time) and CLV come from the tables, but
+> any per-SKU ratio or breach is the CLI's output. Flag null/zero-COGS SKUs as unreliable.
+
 ## Top-line
 `amazon_profit_by_date` (b24cd69c06): trend `total_sales, profit, total_cost, roi, tacos`
 over trailing 7 / 28 / 90 with prior-period deltas. Always report **profit and ROI**, not

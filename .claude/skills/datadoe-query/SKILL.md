@@ -39,6 +39,32 @@ it completes, then download and analyze. It does **not** write back to Amazon.
   total_orders, cogs_total, total_fees, fba_fees, awd_fees, ad_spend, ad_sales, acos, tacos,
   roi, buybox_percentage, page_views`, plus product metadata. **Prefer this for any profit/
   margin/ROI question — do not recompute profit from raw tables.**
+
+> **VERIFIED LIVE (2026-06-09) — read before any money pull:**
+> - The SKU column is **`sku`** (not `seller_sku`).
+> - `acos/tacos/roi` are **percentages** (`30.0` = 30%, not `0.30`) — verified row-wise.
+> - **A1 (locked):** these ratios are **DAILY** only; there is **no per-SKU window-ratio
+>   column** and `groupBy` **cannot** aggregate a correct window ratio (avg of daily ratios
+>   is wrong). To get a trailing-window per-SKU ratio, pull **`groupBy ["sku","currency"]`
+>   + `sum`** of the components, aliased `*_sum` (a bare alias collides — `ALIAS_COLLISION`):
+>   `ad_spend_sum, ad_sales_sum, total_sales_sum, profit_sum, total_cost_sum, total_units_sold→units_sum`.
+>   The reviewed engine computes the ratio from the sums.
+
+## Money math — ALWAYS via the engine CLI, never prose (CLAUDE.md hard rule 4)
+
+Any ACOS / TACOS / ROI / margin / breach **number** comes from the hand-written, pytest-covered
+engine — **never computed in chat**. After downloading the `groupBy sku + *_sum` export, run:
+
+```
+cd engine && uv run python scripts/answer_tacos.py \
+  --artifact <downloaded.csv> --export-id <id> --marketplace CA \
+  --status COMPLETED --window-from <from> --window-to <to>
+```
+
+It returns typed JSON (per-SKU `acos/tacos/roi` computed from the summed components, breach
+flags vs `engine/config/thresholds.toml`, `no data` / `no sales` / refusal). The skills
+**render and interpret** that JSON; they do not re-derive the numbers. The CLI catalog
+defaults to `engine/tests/fixtures/ca_catalog_skus.txt` (re-seed from the real catalog).
 - **Profit by Date** — `id: b24cd69c06` (premium) · table `amazon_profit_by_date`.
   Same metrics aggregated to the day. Use for top-line trend.
 

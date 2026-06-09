@@ -14,6 +14,13 @@
 # KEYED BY MARKETPLACE (mirrors the future `config (key, marketplace)` grain).
 # Migrating to Supabase later: each [marketplace.<code>] key/value becomes one
 #   `config` row with marketplace = <code>.
+#
+# SYNC (merge 2026-06-09): `state/targets.md` is the HUMAN dial — tiered ACOS postures
+#   (hero/maintain/cut), inventory weeks-of-cover, listing benchmarks, margin floors,
+#   read by the prose skills. THIS file is the MACHINE mirror the engine CLI enforces for
+#   the hard ad ceilings (acos/tacos) + waste trigger. Keep the ad ceilings here in sync
+#   with the "Advertising" section of targets.md. Tier-aware ceilings (hero 35 / maintain
+#   28 / cut 18) activate once the SKU->tier table in anabtawi-context is filled.
 
 [marketplace.CA]            # amazon.ca (CAD) — your only active marketplace today
 # Minimum acceptable net margin %, e.g. 20.0  (leave empty until you decide)
@@ -30,4 +37,5 @@ tacos_ceiling_pct = 15
 # Days-of-cover floor below which inventory is "at risk", e.g. 21
 days_of_cover_floor = ""
 # Spend with zero attributed orders that triggers a "wasted spend" flag (CAD), e.g. 5.00
-zero_conversion_spend_trigger = ""
+# Mirrors targets.md `waste_flag_min_spend: 10` (low-volume catalog -> low bar).
+zero_conversion_spend_trigger = 10

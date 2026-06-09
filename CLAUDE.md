@@ -58,6 +58,39 @@ independent (e.g. the morning briefing fans out to all four, then you synthesize
 6. **Quantify before/after.** Every recommended change names the current value, the proposed
    value, and the expected effect.
 
+## The engine (the truth layer — `engine/`)
+
+The money math is **hand-written and pytest-covered Python** in `engine/`, not prose
+reasoning. This is non-negotiable: a prior agency fabricated reporting, so every dollar
+figure must trace to reviewed code, not a chat estimate.
+
+- **Any ACOS / TACOS / ROI / margin / breach number** comes from `engine/scripts/answer_tacos.py`
+  (and its successors), which read DataDoe's window-summed components and compute the ratio
+  with typed results + refusals. The skills **render and interpret** that JSON — they do not
+  compute ratios in chat. See `datadoe-query` → "Money math" for the exact pull + command.
+- **Thresholds:** the CLI enforces the hard ad ceilings from `engine/config/thresholds.toml`;
+  `state/targets.md` is the human dial (tiers, inventory, listing). A missing threshold →
+  **refuse the flag** ("no threshold set"), never a default.
+- **Verified DataDoe facts (2026-06-09):** column is `sku`; ratios are percent; the per-SKU
+  window ratio is computed from `groupBy sku + *_sum` components (A1) — recorded in
+  `docs/datadoe-source-map.md §6` and `datadoe-query`.
+- **Tests are the contract:** `cd engine && uv run pytest` must stay green; money-logic
+  changes are hand-written + reviewed, never auto-generated.
+
+## Hard rules (binding — inherited from the project constitution)
+
+1. **Data layer is READ-ONLY** (DataDoe). No code assumes an Amazon write path.
+2. **No autonomous writes to Amazon.** Every change is a reviewed artifact → explicit
+   approval → (later) a gated write-MCP. Every approved action logs to `state/decisions.md`.
+3. **Money-touching logic is hand-written, reviewed, and tested** (the `engine/`). Never
+   auto-generated, never computed in prose.
+4. **Never invent a number or a threshold.** Missing data → "no data"; missing threshold →
+   "no threshold set"; failed/empty export → refuse with the reason. A wrong number is worse
+   than no number.
+5. **Secrets live in `.env`** (gitignored) — the seller UUID is `$AMAZON_CA_SELLER_ID`, never
+   inlined in code, skills, or committed files.
+6. **Every external call (DataDoe export) is logged.** Cite source + date window on every figure.
+
 ## Operating rhythm
 - **Daily (AM):** `tasks/morning-briefing.md` — overnight pull, anomalies vs targets, top-3
   actions. Archive to `state/daily/`.

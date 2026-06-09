@@ -7,6 +7,13 @@ description: Playbook for analyzing and optimizing Anabtawi's Amazon advertising
 
 Load `datadoe-query` and `anabtawi-context` first. Read targets from `state/targets.md`.
 
+> **NUMBERS COME FROM THE ENGINE, NOT PROSE (CLAUDE.md hard rule 4).** Every per-SKU
+> ACOS/TACOS/ROI and breach flag is produced by the tested CLI — see `datadoe-query` →
+> "Money math": pull `groupBy sku + *_sum`, then `cd engine && uv run python
+> scripts/answer_tacos.py …`. You **render and interpret** its typed JSON (breach / no
+> data / no sales / refusal); you do **not** compute or eyeball a ratio in chat. Ad-console
+> figures may be cited for cross-check, but the system-of-record number is the CLI's.
+
 ## Inputs
 - Per-ASIN efficiency: `amazon_ads_performance_by_child_asin_and_date` (d0017e92fb).
 - Ad group / placement / SB: `7c1ba29e52`, `3d720918e6`, `0dd6cbf08c`.
