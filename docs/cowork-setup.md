@@ -81,3 +81,47 @@ applying the source's own definitions. Do NOT recompute ratios yourself in chat.
   utility columns (collapsed), so it is safe to persist as a fixture after review.
 - Operator sign-off (TRUST-04, 2026-06-09): live numbers reconcile to Seller Central,
   CA-only, no marketplace bleed.
+
+---
+
+## MERGED SYSTEM (2026-06-09) — supersedes the above where they differ
+
+The workspace is now the **merged home** `anabtawi-amazon-os/` (this folder, a git repo):
+the Cowork operating shell (orchestrator + 4 specialists, tasks, brain, deliverables) +
+the tested money **engine** in `engine/` (the `habibos` package, `answer_tacos.py`, pytest).
+Decisions: **Opus everywhere · file-based state · this folder is home.**
+
+### Cowork app setup (your steps)
+1. **Connectors** → add **DataDoe** (your MCP endpoint), **Claude in Chrome** + **Tavily**
+   (for the catalog-auditor's live checks), and the **Filesystem MCP** scoped to this folder
+   (lets the live cockpit write your approvals back to `state/inbox/index.json`).
+2. **New Project "Anabtawi OS"** → point it at **this folder** (`anabtawi-amazon-os/`).
+   It loads `CLAUDE.md` (the constitution) + the skills automatically.
+3. **Model → Opus.**
+4. **Scheduled tasks** (while Mac awake + Cowork open): `morning-briefing` (~07:00),
+   `ppc-daily` (midday), `restock-weekly`, `business-review-weekly`, `pnl-monthly`,
+   `brain-compaction-weekly`.
+
+### Daily use — the interactivity loop
+- Each task **computes via the engine** (never prose), then files ranked **Action-Inbox**
+  items (`state/inbox/`) and refreshes the **cockpit** at `deliverables/dashboard.html`.
+- You open the cockpit: clickable **Approve / Snooze / Reject / Done** cards (ranked by $) +
+  the TACOS-by-SKU table. A click copies the apply command
+  (`cd engine && uv run python scripts/inbox.py status <id> <choice>`); with the Filesystem
+  MCP wired, the published artifact writes `index.json` directly.
+- `approved`/`done` log to `state/decisions.md`; the weekly review measures whether it paid off.
+
+### Run it now (even before Cowork wiring), from this folder:
+```
+cd engine
+uv run python scripts/answer_tacos.py --artifact <export.csv> --export-id <id> \
+  --marketplace CA --window-from <from> --window-to <to> > /tmp/ans.json
+uv run python scripts/inbox.py add --domain ppc --agent ppc-manager --title "…" --impact <$> …
+uv run python scripts/render_dashboard.py --tacos /tmp/ans.json   # open deliverables/dashboard.html
+```
+
+### Still your input (step 9)
+- Fill the **SKU → ASIN → tier → landed-COGS** table in
+  `.claude/skills/anabtawi-context/SKILL.md` (highest-leverage 30 min — profit math depends on it).
+- Set **`assumed_lead_time_weeks`** in `state/targets.md`.
+- Close out the `pending` statuses in `state/decisions.md`.
