@@ -1,0 +1,53 @@
+[
+  {
+    "id": "2026-06-09-ppc-fx-m8ma-mmsa",
+    "created": "2026-06-09T19:30:45Z",
+    "status": "pending",
+    "domain": "ppc",
+    "agent": "ppc-manager",
+    "title": "Cut FX-M8MA-MMSA bid ~30%",
+    "why": "TACOS 69.2%, ROI -27.1% trailing-30d \u2014 ads losing money",
+    "impact_cad": -140.0,
+    "sku": "FX-M8MA-MMSA",
+    "current": "current bid",
+    "proposed": "cut ~30%",
+    "evidence": "exp 103e0769 \u00b7 TACOS 69.2 / ACOS 74.0 / ROI -27.1",
+    "operator_task": "Campaign Manager \u2192 reduce FX-M8MA-MMSA bid ~30%; recheck in 7d",
+    "artifact": null,
+    "note": null
+  },
+  {
+    "id": "2026-06-09-ppc-18-116z-1r77",
+    "created": "2026-06-09T19:30:45Z",
+    "status": "pending",
+    "domain": "ppc",
+    "agent": "ppc-manager",
+    "title": "Cut 18-116Z-1R77 bid ~25%",
+    "why": "TACOS 46.5%, ROI -7.5% \u2014 ad-unprofitable",
+    "impact_cad": -33.0,
+    "sku": "18-116Z-1R77",
+    "current": "current bid",
+    "proposed": "cut ~25%",
+    "evidence": "exp 103e0769 \u00b7 TACOS 46.5 / ACOS 67.1 / ROI -7.5",
+    "operator_task": "Campaign Manager \u2192 reduce 18-116Z-1R77 bid ~25%",
+    "artifact": null,
+    "note": null
+  },
+  {
+    "id": "2026-06-09-ppc-9z-kuhz-fu2i",
+    "created": "2026-06-09T19:30:45Z",
+    "status": "pending",
+    "domain": "ppc",
+    "agent": "ppc-manager",
+    "title": "Pause ad for 9Z-KUHZ-FU2I",
+    "why": "$25.28 ad spend, $0 sales over 30d \u2014 pure waste",
+    "impact_cad": -25.0,
+    "sku": "9Z-KUHZ-FU2I",
+    "current": "ad active",
+    "proposed": "pause",
+    "evidence": "exp 103e0769 \u00b7 spend 25.28, sales 0",
+    "operator_task": "Campaign Manager \u2192 pause ads targeting 9Z-KUHZ-FU2I",
+    "artifact": null,
+    "note": null
+  }
+]

@@ -20,5 +20,8 @@ engine/logs/
 # + buyer geography. Keep the folder, don't track the contents.
 data/*.csv
 
+# Live cockpit — regenerated each run from state/inbox/index.json (the source of truth).
+deliverables/dashboard.html
+
 # OS
 .DS_Store
