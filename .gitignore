@@ -1,0 +1,24 @@
+# Secrets — never commit
+.env
+engine/.env
+**/.env
+
+# Python
+engine/.venv/
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Logs
+logs/
+engine/logs/
+
+# Cached DataDoe exports — regenerable, and the raw daily ones carry the seller UUID
+# + buyer geography. Keep the folder, don't track the contents.
+data/*.csv
+
+# OS
+.DS_Store

@@ -1,0 +1,42 @@
+# Explicit CA catalog SKU list (one sku per line).
+#
+# WHY THIS FILE EXISTS (D-10): the CLI loads this committed list as the catalog so a
+# catalog SKU that is ABSENT from the premium export surfaces as "no data (not in
+# premium export)" at runtime — never 0/blank, and never a silent export-rows fallback
+# that would make the not-in-export path unreachable.
+#
+# REAL SEED (plan 02-03): re-seeded from the first live DataDoe pull
+# (Profit by SKU & Date 57a0cb319c, marketplace CA, trailing 30d, 2026-06-09).
+# These are the SKUs DataDoe returned for the window. The seller UUID is NEVER
+# written here; SKU codes and policy numbers are not secrets.
+#
+# NOTE: this is the export-observed set (22 SKUs). If the operator's full known CA
+# catalog is larger (~30), add the missing SKUs here so they surface as "no data
+# (not in premium export)" rather than being invisible. Until then, a known SKU that
+# never appears in any export will not be flagged — that gap closes when the full
+# catalog (or sku_master, Phase 3.5) is the source.
+#
+# Blank lines and lines starting with '#' are ignored by the loader.
+
+18-116Z-1R77
+FX-M8MA-MMSA
+T8-2W2X-INOK
+EU-Z87B-ZRBZ
+GG-0DC1-SKHG
+Y4-Y8EE-VEOD
+KP-MEL9-XYGW
+C5-TXQU-Y67R
+09-AJOP-CS83
+YE-HCDW-4UYW
+VH-ZTOC-GW1Q
+1S-ITGB-CZFR
+E3-DSPC-O2UN
+26-JITG-E4FU
+AN-9938-NXOT
+KL-GDUL-HEA1
+W3-UQRU-PGRR
+BU-6GOS-GW5Q
+ZK-4NDS-MNA9
+ASW-H50
+H8-PWJ0-3B1Y
+9Z-KUHZ-FU2I

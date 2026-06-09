@@ -1,0 +1,33 @@
+# Habib OS — operator thresholds (LOCAL substitute for the Supabase `config` table).
+#
+# WHY THIS FILE EXISTS
+#   Supabase is deferred (see ROADMAP.md "Supabase deferral"). Until the `config`
+#   table exists, money-touching thresholds live here so the agent can read real,
+#   operator-set values instead of guessing.
+#
+# HARD RULE (CLAUDE.md): the agent NEVER invents a threshold. A value left empty
+#   ("" or absent) means REFUSE the answer that needs it — it is NOT a default.
+#   Fill every value below with your real number before relying on a skill that
+#   reads it. Numbers are policy, not secrets — committing your real values is fine
+#   and keeps them reviewable.
+#
+# KEYED BY MARKETPLACE (mirrors the future `config (key, marketplace)` grain).
+# Migrating to Supabase later: each [marketplace.<code>] key/value becomes one
+#   `config` row with marketplace = <code>.
+
+[marketplace.CA]            # amazon.ca (CAD) — your only active marketplace today
+# Minimum acceptable net margin %, e.g. 20.0  (leave empty until you decide)
+min_margin_pct = ""
+# ACOS ceiling % above which ad spend is flagged, e.g. 35.0
+# D-09: operator-adopted recommendation (30% conservative catalog-wide break-even-ACOS
+#   proxy for a food/sweets catalog). NOT a runtime-invented value — TUNE after the
+#   first real TACOS-by-SKU answer reveals the actual distribution.
+acos_ceiling_pct = 30
+# TACOS ceiling % (total ad cost of sales), e.g. 15.0
+# D-09: operator-adopted recommendation (15% healthy band for an established, non-launch
+#   catalog). TUNE after the first real answer; eventually per-SKU break-even at Phase 3.5.
+tacos_ceiling_pct = 15
+# Days-of-cover floor below which inventory is "at risk", e.g. 21
+days_of_cover_floor = ""
+# Spend with zero attributed orders that triggers a "wasted spend" flag (CAD), e.g. 5.00
+zero_conversion_spend_trigger = ""

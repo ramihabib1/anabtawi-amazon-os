@@ -1,0 +1,99 @@
+---
+name: datadoe-query
+description: Canonical guide for pulling Anabtawi Amazon data from the DataDoe MCP. Use whenever you need sales, profit, advertising, inventory, or order data — before calling any DataDoe tool. Contains the seller ID, the source catalog with table IDs and columns, which table to prefer for which question, and the query/polling rules.
+---
+
+# Querying DataDoe for Anabtawi
+
+DataDoe is the **read-only analytics layer**. You request an export (CSV/JSON), poll until
+it completes, then download and analyze. It does **not** write back to Amazon.
+
+## Account
+- **sellerOrVendorId:** `5692b95f-f3f0-4063-9c1c-40177c54f408` (ANABTAWI SWEETS CA)
+- **Marketplace:** amazon.ca · marketplace_id `A2EUQ1WTGCTBG2` · currency CAD
+
+## The workflow (every pull)
+1. `exports_create` with `sellerOrVendorIds`, `sourceId`, `columns`, `outputType:"CSV"`,
+   and — if the source has a `date` column — `from`/`to` (required, inclusive).
+2. Poll `exports_get(exportId)` until status is `COMPLETED` (or `FAILED`).
+3. `exports_raw_download(exportId)` for the content. Save it to `data/{table}_{from}_{to}.csv`.
+4. If a needed source isn't in the catalog below, discover it with
+   `exports_sources_get(query, sellerOrVendorIds)` and add it here.
+
+## Hard rules
+- **Row cap is 2500 per export.** If a query would exceed it: aggregate (`groupBy` +
+  `aggregations`), filter, top-N (`orderByColumn`/`orderByDirection` + `limit`), or paginate
+  with `skip`. Never assume you got the full table.
+- **Dates are required** on any source with a `date` column. Use real dates (today is the
+  reference). Default windows: yesterday, trailing 7, trailing 28/30.
+- **`filters`** = SQL WHERE on raw rows *before* aggregation (combinator `and`/`or`, per-rule
+  operators `=, !=, >, >=, <, <=, in, between, contains, null, ...`).
+- **`dateInterval`** (DAY/WEEK/MONTH) collapses a `date` group-by to that bucket.
+- Prefer **purpose-built tables over manual math** (see "prefer" notes below).
+
+## Source catalog (verified for this account)
+
+### Money
+- **Profit by SKU & Date** — `id: 57a0cb319c` (premium) · table `amazon_profit_by_sku_and_date`.
+  The money table. Per SKU/ASIN/day: `profit, total_cost, total_sales, total_units_sold,
+  total_orders, cogs_total, total_fees, fba_fees, awd_fees, ad_spend, ad_sales, acos, tacos,
+  roi, buybox_percentage, page_views`, plus product metadata. **Prefer this for any profit/
+  margin/ROI question — do not recompute profit from raw tables.**
+- **Profit by Date** — `id: b24cd69c06` (premium) · table `amazon_profit_by_date`.
+  Same metrics aggregated to the day. Use for top-line trend.
+
+### Sales & orders
+- **Order Line Items** — `id: 89b27535d2` · table `amazon_order_items_with_cogs`.
+  Near-real-time order log (initial 730d, daily refresh 28d). Use for **recent/precise**
+  sales, geography (`address_state/city`), B2B (`order_is_business`), and **repeat/CLV** via
+  `buyer_email` (hashed, stable per buyer). Use `item_price_value` for order value. Aggregate
+  for per-product or per-day totals.
+- **Sales & Traffic by ASIN & Date** — `id: 401ffcd7e5` · table `amazon_sales_and_traffic_with_cogs`.
+  Per child ASIN/day: `session, page_views, units_session_percentage` (conversion),
+  `buybox_percentage, total_sales, total_units, total_orders, cogs_*`. **Prefer for
+  long-period and traffic/conversion analysis.** Data can lag up to 4 days — for the last few
+  days use Order Line Items instead.
+
+### Advertising
+- **Ad Performance by ASIN & Date** — `id: d0017e92fb` · `amazon_ads_performance_by_child_asin_and_date`
+  (SP + SD, per ASIN). Use for per-ASIN ad efficiency.
+- **Ad Group Performance** — `id: 7c1ba29e52` · `amazon_ads_by_ad_group_by_date`.
+- **Ad Placement Performance** — `id: 3d720918e6` · `amazon_ads_placement_by_campaign_by_date`
+  (SB + SP, top-of-search vs rest).
+- **Sponsored Brands by Ad & Date** — `id: 0dd6cbf08c` · `amazon_ads_sponsored_brands_by_ad_by_date`.
+- Common ad columns: `ad_spend, ad_sales, ad_clicks, ad_impressions, ad_orders,
+  ad_units_sold, ad_campaign_name, ad_campaign_status, ad_campaign_budget_amount`,
+  plus new-to-brand metrics. SP sales are 7-day attribution; SB/SD are 14-day.
+- **To wire in next:** a campaign-level table (`amazon_ads_performance_by_campaign_by_date`)
+  and a **search-term / targeting** source for negative-keyword mining — discover with
+  `exports_sources_get("search term keyword targeting", [sellerId])`.
+
+### Inventory
+- **FBA Inventory Health** — `id: 44fc5ba0ce` · `amazon_fba_inventory_health` (daily snapshot).
+  The restock brain: `available, inbound_quantity (working/shipped/received), days_of_supply,
+  weeks_of_cover_t30/t90, sell_through, units_shipped_t7/t30/t60/t90, recommended_ship_in_quantity,
+  recommended_ship_in_date, fba_inventory_level_health_status, low_inventory_level_fee_applied_in_current_week,
+  estimated_excess_quantity, inv_age_* buckets, estimated_storage_cost_next_month,
+  recommended_action, recommended_removal_quantity, estimated_cost_savings_of_recommended_actions,
+  sales_rank, supplier`.
+- **AWD Replenishment Orders** — `id: cedb259753` · `amazon_awd_replenishment_orders`
+  (status, inbound/outbound shipments).
+
+### To discover and add as needed
+Returns/concessions, settlement/fee detail, reviews/ratings, and listing/catalog quality —
+use `exports_sources_get` with the relevant keywords, verify the columns, and append them
+above so the next run doesn't rediscover them.
+
+### Listing content & catalog (added)
+- **Product Catalog by ASIN** — `id: 68d2de238e` · `amazon_products_by_child_asin`. Real
+  listing copy: `product_name` (title), `product_bullet_point_1..5`, `product_description`,
+  `product_image_url`, `product_brand`, `product_size`, category names, best-selling ranks.
+  This is the source of truth for the listing audit — no scraping needed.
+- **Listings** — `id: ba689c05d7` · `amazon_listings_with_cogs`. Live `listing_price_value`,
+  `listing_status` (Active/Inactive/Incomplete), referral fee, FBA/AWD quantities, current COGS.
+- **Product Catalog / Listings (Raw JSON)** — `0e1ea34395` / `6ea445cdc4`. Full SP-API
+  `attributes` + `images` JSON. Heavy — download to file, don't load into context.
+- **Seller Account Health** — `id: 57036be081` · `amazon_seller_performance`. Account status,
+  ODR, policy/IP/food-safety violations, late-shipment — for the account-level audit.
+- **FBA Ledger** — `829e34f54e` / `6a6e14526d`. Lost/damaged/returned units & reconciliation
+  (reimbursement recovery).
