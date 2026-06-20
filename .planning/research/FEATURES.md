@@ -1,195 +1,185 @@
-# Feature Research
+# Features Research — Milestone v2.0 (Gated PPC Write Path)
 
-**Domain:** Amazon FBA PPC & profit intelligence — conversational, read-only Q&A (Milestone 1)
-**Researched:** 2026-06-08
-**Confidence:** HIGH
+**Domain:** Amazon Ads (amazon.ca) Sponsored Products execution layer for Anabtawi Sweets
+**Researched:** 2026-06-20
+**Mode:** Ecosystem / feature-landscape
+**Confidence:** HIGH on mechanics (DataDoe action map verified in execution plan; PPC mechanics
+verified against Amazon Ads docs + practitioner sources). MEDIUM on harvest cadence specifics.
 
-This research maps the standard analyses an Amazon-seller PPC/profit tool is expected to do, scoped strictly to what is **answerable read-only from the DataDoe sources confirmed in docs/04**. Every feature below is a *question the agent answers* — none writes to Amazon. All Amazon-write/automation actions are in Anti-Features (the prior-agency abuse vector).
+> Supersedes the Milestone-1 (read-only intelligence) FEATURES.md, archived in git history.
 
-DataDoe source shorthand used throughout:
-- **STP** = Search Term Performance (`amazon_ads_search_terms_by_campaign_by_date`)
-- **KWT** = Keyword Targeting Performance (`amazon_ads_targeting_by_campaign_by_date`)
-- **PERF-CAMP** = Ad Performance by Campaign & Date (`amazon_ads_performance_by_campaign_by_date`)
-- **PERF-ASIN** = Ad Performance by ASIN & Date (`amazon_ads_performance_by_child_asin_and_date`)
-- **PLACE** = Ad Placement Performance (`amazon_ads_placement_by_campaign_by_date`)
-- **CAMP-RAW** = Ad Campaigns raw config (`amazon_ads_campaigns_raw`)
-- **PROFIT** = Profit by SKU & Date (`amazon_profit_by_sku_and_date`, PREMIUM)
-- **ORDERS** = Order Line Items (`amazon_order_items_with_cogs`)
-- **COGS-TBL** = Supabase `cogs` / `sku_master` (operator's landed cost + FX truth)
+**Scope reminder (binding):** PPC writes ONLY, against existing FBA stock, governed by a per-SKU
+margin-tiered TACOS gate, via DataDoe `actions_start`. No restocks, no listing writes, no catalog
+refresh. Standing approval for reversible moves; explicit approval for spend-up / new campaigns.
 
-## Feature Landscape
-
-### Table Stakes (Sellers Expect These)
-
-The eight analyses named in the milestone brief. Any Amazon PPC/profit tool that can't answer these feels broken. All are read-only against DataDoe.
-
-| Feature | Why Expected | Complexity | DataDoe Source | Notes |
-|---------|--------------|------------|----------------|-------|
-| **Search-term harvesting + negative-keyword identification** | The single highest-ROI PPC optimization; industry audits show 25–40% of spend goes to terms that never converted. Sellers expect "which search terms should I negate." | MEDIUM | **STP** (search term → matched keyword, spend, sales, orders, clicks, CTR, match type) | Rule of thumb: terms with ≥10–20 clicks (or > a spend threshold like ~1× target CPA) and **zero orders** are negation candidates; converting search terms not yet a keyword are *harvest* candidates. **Thresholds must come from Supabase `config`, never invented** (per docs/02). Output is a ranked candidate list — operator approves & adds the negative in Seller Central. |
-| **Wasted-spend detection** | "Where am I wasting ad spend" is a literal Milestone-1 acceptance question. | MEDIUM | **STP** (primary), **PERF-CAMP**, **KWT** | Aggregate spend with no/low return across search terms, keywords, and campaigns. Sort by spend desc, flag zero-conversion and high-ACOS spend. Overlaps heavily with negative-keyword harvesting but also covers high-spend low-return *keywords/campaigns*, not just raw search terms. |
-| **Keyword/target bid context** | Sellers expect to see current bid vs. performance vs. top-of-search impression share before reasoning about a bid. | MEDIUM | **KWT** (keyword/target, bid, top-of-search impression share), **STP** (keyword bid, match type) | Read-only *context for a bid decision*, NOT a bid recommendation engine (that's Milestone 3). Surface: current bid, TOS impression share, spend/ACOS per keyword so the operator can reason. |
-| **Campaign budget-cap detection** | "Which campaigns are budget-capped" is a literal Milestone-1 acceptance question. | MEDIUM | **CAMP-RAW** (budget amount, budget type, bid strategy, state) + **PERF-CAMP** (daily spend vs. budget) | Flag campaigns whose daily spend ≈ daily budget (capped) AND are performing well (low ACOS / high conversion) — those are the costly caps. DataDoe does not expose Amazon's native "Lost IS (budget)" column, so detect via **spend-hitting-budget pattern** over the date range, not impression-share-lost. Note this approximation as a known limitation. |
-| **Placement analysis (TOS vs rest-of-search vs product-page)** | Standard lever; top-of-search CTR runs materially higher than other placements, and placement bid adjustments are a core PPC dial. | MEDIUM | **PLACE** (TOS / rest-of-search / product-page spend, sales, orders) + **CAMP-RAW** (current placement bid adjustments) | Compare per-placement ACOS/CVR to show where each campaign converts. Read-only: surfaces "your product-page placement converts at X, TOS at Y, current TOS adjustment is Z%" — operator decides. |
-| **ACOS / TACOS / ROI by SKU** | "What's my TACOS by SKU" is a literal Milestone-1 acceptance question. TACOS-by-SKU requires ad spend joined to *total* revenue at SKU grain — the metric sellers most want and most tools get wrong. | LOW–MEDIUM | **PROFIT** (premium — already computes ACOS, TACOS, ROI, net profit per SKU/date) | **Prefer PROFIT's precomputed values** (docs/02 operating principle: don't hand-roll the math). Complexity is LOW *if* the premium source is enabled; MEDIUM if it must be reconstructed by joining PERF-ASIN ad spend to ORDERS revenue. Confirm premium availability in Phase 1. |
-| **True margin / profit-by-SKU** | A 25% ACOS is profitable or ruinous depending on the SKU's real margin; sellers expect net-profit-after-everything, not just ad metrics. | MEDIUM | **PROFIT** (net profit, total cost = fees + COGS + ad spend, FBA/AWD fees, referral) — authority; **COGS-TBL** as reconciliation/fallback | PROFIT is the margin authority. `cogs`/`sku_master` reconcile FX and cover SKUs the premium source misses. Flag when PROFIT's COGS disagrees with the operator's landed cost. |
-| **FX-aware margin for a CA seller importing in USD** | Anabtawi stock is imported (landed cost likely in USD/foreign currency) while amazon.ca revenue is CAD. Margin computed without FX is wrong; small CAD/USD swings move the bottom line. | MEDIUM–HIGH | **COGS-TBL** (landed cost + the FX rate/currency per cost row) reconciled against **PROFIT** (CAD-denominated net profit) | DataDoe data is amazon.ca CAD; the FX truth lives in Supabase `cogs`. Open question (docs/05): whether `cogs` captures FX per cost row. Feature = reconcile PROFIT's COGS against operator's landed cost converted at a known rate, and surface the FX assumption explicitly. Highest-complexity table-stakes item because the source of truth is operator-supplied, not DataDoe. |
-
-### Differentiators (Competitive Advantage)
-
-Not expected of a basic tool, but align with Habib OS's Core Value: a *conversational, trustworthy, numbers-first* agent with structural anti-write guardrails. All still strictly read-only.
-
-| Feature | Value Proposition | Complexity | DataDoe Source | Notes |
-|---------|-------------------|------------|----------------|-------|
-| **Conversational natural-language Q&A over live data** | The entire premise — ask in plain English, get correct numbers spot-checkable to source. Most seller PPC tools are dashboards, not askable. | MEDIUM | All | This is the Milestone-1 product itself, not an add-on. Differentiator vs. Helium10/AdBadger-style dashboards. |
-| **"Show the data behind every claim" provenance** | Directly answers the prior-agency abuse (fabricated reporting). Every number traceable to a DataDoe export + filters. Builds the trust required before any future write-MCP. | MEDIUM | All + run logging | Per docs/02: every external call wrapped/logged. Persist run + result to Supabase (`metric_snapshots`) so answers are auditable, not vibes. |
-| **Margin-aware PPC reasoning (ACOS read against per-SKU margin)** | The pros' insight: "a 25% ACOS means nothing without margin per SKU." Joining PROFIT margin to PPC spend lets the agent say "this spend is unprofitable *for this SKU*," not just "ACOS is high." | MEDIUM | **PROFIT** + **STP/PERF-CAMP** | Cross-source join is the differentiator. Many tools silo ad metrics from true profit. |
-| **Budget-cap impact quantification** | Beyond detecting a cap: estimate forgone profitable sales (capped campaign with low ACOS = leaving money on the table). | MEDIUM–HIGH | **CAMP-RAW** + **PERF-CAMP** + **PROFIT** | Estimate only (no native Lost-IS data). Frame as "this profitable campaign is hitting budget ~daily" rather than a hard $ forgone figure. |
-| **Repeat-purchase / CLV context for PPC payback** | Sweets are consumable/repeat-buy; a high first-order ACOS can be fine if customers repurchase. Reconstructable from ORDERS' hashed `buyer_email`. | HIGH | **ORDERS** (hashed buyer_email) | Native repeat-purchase metrics are NOT available (Agent Central removed); this is a reconstruction. Defer past Milestone 1 unless trivially cheap — flag as v1.x. |
-| **Multi-marketplace-ready answers (CA now, US later)** | Schema carries marketplace as a first-class dimension; answers stay correct when US data lands without a migration. | LOW (schema), deferred (US logic) | All, partitioned by marketplace | docs/03: US schema-ready, US-specific *logic* deferred until CA is solid. Differentiator is the clean dimension, not US analysis now. |
-
-### Anti-Features (Deliberately NOT Built — Forbidden)
-
-**WARNING — prior-abuse vector.** docs/02: a prior third party took **unauthorized PPC actions and produced fabricated reporting**. The guardrails are *structural*: the DataDoe data layer physically cannot write. Every item below is a hard out-of-scope for Milestone 1; several are forbidden autonomously *forever* (only ever human-approved, logged proposals — and only through a future gated write-MCP). Do not propose patterns that bypass this.
-
-| Anti-Feature | Why It Gets Requested | Why Forbidden Here | What To Do Instead |
-|--------------|----------------------|--------------------|--------------------|
-| **Autonomous negative-keyword application** | "Just auto-add the negatives you find." | This is exactly the abuse vector — silent PPC changes. No DataDoe write capability exists; would require the deferred write-MCP. | Emit a ranked negative-keyword **proposal** with spend/return data; human approves and adds it in Seller Central. Log to `decision_ledger`. |
-| **Autonomous bid changes** | "Lower bids on losers, raise on winners." | Money-moving; the single most-abused PPC action. Money-touching logic must be hand-written/reviewed (docs/02), never auto-executed. | Surface bid *context* (current bid, TOS share, ACOS vs margin). Bid *recommendations* are a Milestone-3 proposal, still human-executed. |
-| **Autonomous budget changes** | "Raise budgets on capped winners automatically." | Direct spend control; autonomous = unbounded spend risk. | Detect & quantify the cap; emit a proposal. Human raises the budget. |
-| **Autonomous campaign / placement-bid-adjustment edits** | "Tune placement bids for me." | Write to the ad account; forbidden. | Placement analysis is read-only context. Adjustments are Milestone-3 proposals. |
-| **Autonomous listing / pricing / inventory writes** | "Fix the listing / reprice / restock." | Out of scope for Milestone 1 entirely; listing is M2 (draft-only), pricing/inventory writes forbidden. Listing edits were part of the prior abuse. | M2 drafts copy for human paste. Pricing/inventory never autonomous. |
-| **Direct SP-API / Amazon Ads API integration in M1** | "Skip DataDoe, go straight to the API for writes." | Reintroduces write capability and the superseded server design; DataDoe is the single read-only source by decision. | Stay on DataDoe (read-only). A gated write-MCP is a separate, later, trust-gated decision. |
-| **Invented thresholds / benchmarks** | "Just flag anything over 30% ACOS." | Fabricated-reporting risk; generic benchmarks lie per-SKU. Never invent thresholds (docs/02). | Read every threshold (min margin %, ACOS ceiling) from Supabase `config`. |
-| **Hand-rolled margin math when PROFIT exists** | "Compute net profit yourself from fees." | Error-prone, duplicates a vetted premium source, risks subtly-wrong money numbers. | Prefer PROFIT premium; use `cogs` only to reconcile FX / fill gaps, and flag disagreements. |
-| **Unattended/scheduled PPC review in M1** | "Run this every morning automatically." | Desktop app runs only while the Mac is awake; no assumed cron. Scheduled review is M3. | M1 is conversational/on-demand. Scheduling is M3 (on-open or always-on Mac). |
-
-## Feature Dependencies
-
-```
-Supabase truth store (sku_master, cogs, config, metric_snapshots, decision_ledger)
-    └──required by──> ALL features (thresholds, FX, SKU mapping, run logging)
-
-DataDoe read/compute primitives (STP, KWT, PERF-CAMP, PERF-ASIN, PLACE, CAMP-RAW)
-    └──required by──> every PPC analysis
-
-PROFIT (premium) primitive
-    └──required by──> ACOS/TACOS/ROI-by-SKU
-    └──required by──> True-margin-by-SKU
-                          └──requires──> COGS-TBL + FX  (reconciliation/fallback)
-
-Search-term harvesting / negative-ID ──shares source(STP)──> Wasted-spend detection
-Budget-cap detection ──requires──> CAMP-RAW (config) + PERF-CAMP (actual spend)
-Margin-aware PPC reasoning ──requires──> PROFIT  +  (STP | PERF-CAMP)   [cross-source join]
-Provenance/run-logging ──enhances──> ALL  (every answer auditable)
-Repeat-purchase/CLV ──requires──> ORDERS (hashed buyer_email)  [reconstruction, defer]
-```
-
-### Dependency Notes
-
-- **Everything requires the Supabase truth store first.** Thresholds (`config`), FX/landed cost (`cogs`), SKU↔ASIN mapping (`sku_master`), and audit logging (`metric_snapshots`, `decision_ledger`) underpin every analysis. Phase ordering must stand this up before any analysis is trustworthy.
-- **DataDoe primitives gate all PPC analysis.** The read/compute primitives over STP/KWT/PERF-*/PLACE/CAMP-RAW are the substrate; build them before the analyses that consume them.
-- **Margin-by-SKU requires PROFIT, with COGS-TBL+FX as reconciliation.** PROFIT is the authority; `cogs`/FX fill gaps and validate. The FX feature *requires* the margin feature and adds the currency layer on top.
-- **Budget-cap detection needs both config and actuals.** CAMP-RAW gives the budget setting; PERF-CAMP gives daily spend. Neither alone detects a cap — must join. (No native Lost-IS column; detection is approximate.)
-- **Margin-aware PPC reasoning is the cross-source join** (PROFIT × PPC) that turns "high ACOS" into "unprofitable for this SKU" — the main differentiator, and it depends on both pillars being built first.
-- **Conflict: any write/automation feature conflicts with the read-only data layer.** They cannot coexist with the structural guardrail and are deferred to a gated write-MCP.
-
-## MVP Definition
-
-### Launch With (v1 — Milestone 1)
-
-The four acceptance questions, answered correctly read-only, plus the foundation they stand on.
-
-- [ ] **Supabase truth store + business context in `~/.hermes`** — every analysis depends on it; thresholds/FX/SKU map live here.
-- [ ] **DataDoe read/compute primitives** (STP, KWT, PERF-CAMP, PERF-ASIN, PLACE, CAMP-RAW) — substrate for all PPC answers.
-- [ ] **Wasted-spend detection** — "where am I wasting ad spend" (STP-led).
-- [ ] **Search-term harvesting / negative-keyword identification** — "which search terms to negate" (STP).
-- [ ] **ACOS/TACOS/ROI by SKU** — "what's my TACOS by SKU" (PROFIT premium).
-- [ ] **Campaign budget-cap detection** — "which campaigns are budget-capped" (CAMP-RAW + PERF-CAMP).
-- [ ] **True margin / profit-by-SKU with FX reconciliation** — makes the PPC answers profit-aware (PROFIT + COGS-TBL).
-- [ ] **Provenance / run-logging** — every answer traceable to a DataDoe export; persisted to Supabase (trust requirement given prior abuse).
-
-### Add After Validation (v1.x)
-
-- [ ] **Keyword/target bid context surfacing** — once core Q&A is trusted; read-only bid context (KWT). Trigger: operator starts asking "should I bid X on this keyword."
-- [ ] **Placement analysis** — TOS vs rest vs product-page (PLACE). Trigger: operator asks about placement performance.
-- [ ] **Budget-cap impact quantification** — estimate forgone profitable sales. Trigger: budget-cap detection proves accurate and operator wants the $ size.
-- [ ] **Margin-aware PPC reasoning (explicit join)** — formalize PROFIT×PPC narration. Trigger: per-SKU margin numbers spot-check clean.
-
-### Future Consideration (v2+ / later milestones)
-
-- [ ] **Repeat-purchase / CLV reconstruction** (ORDERS hashed buyer_email) — high complexity, reconstruction not native; defer until there's a concrete payback question.
-- [ ] **US-marketplace-specific logic** — schema ready; logic deferred until CA is solid (docs/03).
-- [ ] **Listing optimization intelligence** — Milestone 2 (draft-only).
-- [ ] **Scheduled PPC review** — Milestone 3 (on-open/always-on; respects desktop constraint).
-- [ ] **Approve-ready PPC change *proposals* (bid/budget/negative)** — Milestone 3; human-executed, logged. Still no autonomous writes.
-- [ ] **Gated write-MCP** — deferred, separate, trust-gated decision. Only after recommendations earn trust.
-
-## Feature Prioritization Matrix
-
-| Feature | User Value | Implementation Cost | Priority |
-|---------|------------|---------------------|----------|
-| Supabase truth store + context load | HIGH | MEDIUM | P1 |
-| DataDoe read/compute primitives | HIGH | MEDIUM | P1 |
-| Wasted-spend detection | HIGH | MEDIUM | P1 |
-| Search-term harvesting / negative-ID | HIGH | MEDIUM | P1 |
-| ACOS/TACOS/ROI by SKU | HIGH | LOW | P1 |
-| Campaign budget-cap detection | HIGH | MEDIUM | P1 |
-| True margin / profit-by-SKU (+FX) | HIGH | MEDIUM–HIGH | P1 |
-| Provenance / run-logging | HIGH | MEDIUM | P1 |
-| Keyword/target bid context | MEDIUM | MEDIUM | P2 |
-| Placement analysis | MEDIUM | MEDIUM | P2 |
-| Margin-aware PPC reasoning (explicit join) | HIGH | MEDIUM | P2 |
-| Budget-cap impact quantification | MEDIUM | MEDIUM–HIGH | P2 |
-| Repeat-purchase / CLV | MEDIUM | HIGH | P3 |
-| US-specific logic | MEDIUM | MEDIUM | P3 |
-| Any autonomous write/automation | — | — | FORBIDDEN |
-
-**Priority key:** P1 = must-have for Milestone 1 launch · P2 = add when core is validated · P3 = future · FORBIDDEN = anti-feature.
-
-## Competitor Feature Analysis
-
-How established tools handle these analyses, and where Habib OS deliberately diverges.
-
-| Feature | Dashboard tools (Helium10 / AdBadger / Perpetua) | DataDoe (raw data layer) | Our Approach (Habib OS) |
-|---------|--------------------------------------------------|--------------------------|-------------------------|
-| Negative-keyword finding | Surface candidates *and* auto-apply / rule-based automation | Provides STP raw export | Surface candidates only; **never auto-apply** — human proposal + ledger |
-| ACOS/TACOS by SKU | Dashboards; TACOS often account-level not per-SKU | PROFIT premium gives per-SKU ACOS/TACOS/ROI precomputed | Per-SKU from PROFIT, read conversationally, margin-aware |
-| Budget-cap detection | Uses Amazon's native Lost-IS (budget) column | No native Lost-IS column exposed | Approximate via spend-hits-budget pattern; flag as estimate |
-| True margin / FX | Generic FBA calculators; FX usually ignored or manual | PROFIT (CAD) + operator `cogs` | Reconcile PROFIT vs operator landed cost; surface FX assumption explicitly |
-| Bid/budget changes | Automated bid rules / autopilot | Read-only (no write) | Read-only context in M1; human-approved proposals in M3; **never autopilot** |
-| Reporting trust | Vendor dashboards (the prior agency fabricated these) | Auditable raw exports | Every claim traceable to a logged DataDoe export — structural anti-fabrication |
-
-## Sources
-
-PPC negative keywords / search-term harvesting / wasted spend (thresholds: ~10–20 clicks zero-conversion; 25–40% wasted spend):
-- [AdBadger — Amazon PPC Negative Keywords (2026)](https://www.adbadger.com/blog/amazon-ppc-education/negative-keywords-amazon-ppc/)
-- [SellerMetrics — Find, Use & Optimize Negative Keywords](https://sellermetrics.app/negative-keywords-amazon-ppc/)
-- [Headline — Amazon Negative Keywords: Profitability-First Guide](https://www.headlinema.com/blog/amazon-negative-keywords)
-- [CaptenAMZ — Amazon Negative Keywords 2026 Strategy Guide](https://captenamz.com/blog/amazon-negative-keywords/)
-
-ACOS vs TACOS, per-SKU profit, placement segmentation by margin:
-- [DataDoe — Amazon ACoS vs TACoS](https://www.datadoe.com/blog-posts/amazon-acos-vs-tacos)
-- [Perpetua — Amazon Total ACoS (TACoS)](https://perpetua.io/blog-amazon-tacos/)
-- [Canopy Management — Ultimate Guide to ACoS and TACoS](https://canopymanagement.com/ultimate-guide-to-acos-and-tacos/)
-- [Adverio — Amazon KPIs That Drive Profit](https://www.adverio.io/amazon-kpis-that-drive-profit-2/)
-
-Budget caps / lost impression share / placement & TOS:
-- [AdLabs — Amazon PPC Budget & Spend Optimization Guide](https://adlabs.app/guides/amazon-ppc-budget-guide/)
-- [Headline — What is Impression Share](https://www.headlinema.com/blog/what-is-impression-share)
-- [ScaleInsights — Fix Low/No Impressions in Amazon PPC](https://scaleinsights.com/learn/how-to-fix-low-or-no-impressions-in-amazon-ppc)
-
-True margin / landed cost / Canada FBA / FX (CAD/USD):
-- [Amazon Seller Central — Canada FBA Profitability Calculator](https://sellercentral.amazon.com/fba/profitabilitycalculator/index?lang=en_CA)
-- [CanAm Currency — Managing CAD/USD for Amazon sellers](https://canamcurrencyexchange.com/currency-exchange-for-online-sellers-managing-cad-usd-for-amazon-etsy-and-shopify-stores/)
-- [Amazon Currency Converter for Sellers (ACCS)](https://sell.amazon.com/programs/amazon-currency-converter)
-- [SAL Accounting — Selling Internationally on Amazon (CA importer)](https://salaccounting.ca/blog/international-selling-amazon-fba/)
-
-Internal (authoritative for source mapping & guardrails):
-- `docs/04-data-tools-reference.md` (confirmed DataDoe sources + columns)
-- `docs/02-context-and-constraints.md` (guardrails, abuse history, margin authority)
-- `docs/03-scope-and-phases.md` (Milestone 1 acceptance questions)
-- `.planning/PROJECT.md` (active requirements, out-of-scope reasoning)
+**Sources read:**
+- `.planning/PROJECT.md` (milestone goal, mission metric, key decisions, out-of-scope)
+- `deliverables/ppc-rebuild_2026-06-12.md` (teardown, change sheet §8, restructured architecture §7)
+- `deliverables/ppc-new-campaigns_2026-06-16.md` (5 new campaigns A–E + gated set, harvest loop)
+- `deliverables/ppc-rebuild-execution-plan_2026-06-20.md` (DataDoe action map §A, hard limits, waves)
+- Amazon Ads dynamic-bidding guide; Pilothouse/Optmyzr/Sellermetrics harvest + match-type sources (web, MEDIUM)
 
 ---
-*Feature research for: Amazon FBA PPC & profit intelligence (read-only conversational Q&A)*
-*Researched: 2026-06-08*
+
+## Table Stakes (must-have execution capabilities)
+
+These are the non-negotiable mechanics. Without them there is no write path. The execution plan
+(§A) already proves each maps to a real DataDoe action — so these are "build the wrapper," not
+"research if possible."
+
+| # | Capability | DataDoe action(s) | Why table-stakes for this milestone |
+|---|---|---|---|
+| T1 | **propose → dryRun → approve → apply → reconcile loop** | `actions_start dryRun:true` → approval → `dryRun:false` → `actions_get(actionId)` until `COMPLETED` | The spine. Every write goes through it. `dryRun` must return `VALIDATED` before anything touches the account. This is the structural guardrail the whole milestone exists to deliver. |
+| T2 | **Read-the-live-structure FIND primitives** | `CAMPAIGNS_FIND`, `AD_GROUPS_FIND`, `TARGETS_FIND`, `ADS_FIND` | You cannot write a bid/pause/negative without the live `campaignId / adGroupId / targetId / adId`. Wave 0 ("Discovery") is read-only and zero-risk; it makes every other wave executable. |
+| T2b | **Pause a campaign / ad / keyword** | `CAMPAIGNS_UPDATE state:PAUSED`, `ADS_UPDATE state:PAUSED`, `TARGETS_UPDATE state:PAUSED` | The single biggest lever in the teardown (pausing dead-SKU ads = −$279/mo, ~43% of spend, zero sales loss). Fully reversible → standing-approval class. |
+| T3 | **Add negative keyword / negative product target** | `TARGETS_ADD negative:true` (per campaign/ad-group) | Harvest §2 of teardown; the harvest loop's "block the source campaign" step. Note hard limit: **no shared-negative-list object exists** — the same negative set must be applied to each ENABLED campaign individually and re-added to new campaigns at launch. Reversible. |
+| T4 | **Bid change (keyword/target)** | `TARGETS_UPDATE bid` | Bid-down on "watch-don't-negate" terms (pistachio baklava, arabic sweets); bid-up on brand defense (+10%). Bid-DOWN is reversible (standing approval); bid-UP is spend-increasing (explicit approval). |
+| T5 | **Budget change (campaign)** | `CAMPAIGNS_UPDATE budgets` | Raise the capped winner SP-Phrase $10→$15; fund proven SKUs. Budget-UP is the canonical explicit-approval action. |
+| T6 | **Placement bid adjustments** | `CAMPAIGNS_UPDATE placementBidAdjustments` | TOP_OF_SEARCH + PRODUCT_PAGE both convert; "rest of search"/"Other" lags. The system must bias placement, not just flat bids. Amazon allows up to +900% — gate hard. |
+| T7 | **Retarget a campaign's product ad** | `ADS_REMOVE` old + `ADS_ADD` new | Swap dead-SKU ads (FX-M8MA) for live canonical SKUs (T8-2W2X, 18-116Z) inside an already-funded, capped campaign — redirects ~$200/mo to sellable stock. Net-neutral spend but changes *what* sells. |
+| T8 | **Build a new campaign (chain)** | `CAMPAIGNS_ADD` → `AD_GROUPS_ADD` → `ADS_ADD` → `TARGETS_ADD` | The 5 coverage-gap campaigns (A–E) and the 09-AJOP HERO campaign. 3–4 chained actions; if a link fails mid-chain the system must detect a partial build (see D6). Explicit approval. |
+| T9 | **Match-type-aware keyword targeting** | `TARGETS_ADD` with EXACT / PHRASE / BROAD; SP Auto close+loose | The rebuild architecture is funnel-by-match-type (exact = conversion, phrase = discovery, auto = harvest). The write layer must set match type correctly per the build sheet. |
+| T10 | **Archive graveyard campaigns** | `CAMPAIGNS_REMOVE` (= console "archive", recoverable, NOT hard-delete) | ~57 Feb-04 bot/SKW + 2 unnamed ENABLED. Hygiene. **Low reversibility** → its own separately-approved batch, run last. |
+| T11 | **Reconcile via action status + console, NOT next-day exports** | `actions_get(actionId)` + manual console check | DataDoe reporting lags ≤24h; writes hit Amazon immediately. Verification reads the action result, not tomorrow's pull. A reconcile that trusts lagged data would raise false "didn't apply" alarms. |
+| T12 | **Log every applied action** | append to `state/decisions.md` + `brain/raw/` | Constitution: every money-moving action is a logged, approved proposal. Non-negotiable; the prior-agency abuse is the entire reason this milestone is gated. |
+
+---
+
+## Differentiators (the milestone's actual thesis)
+
+These separate "a button that calls the Ads API" from "a PPC engine that sells through stock at a
+margin-safe TACOS." This is where the milestone earns its keep.
+
+### D1 — Per-SKU margin-tiered TACOS/bid gate (the headline)
+**What:** Before any spend-increasing write (bid-up, budget-up, new campaign, placement-up) is even
+proposed, the engine derives that SKU's TACOS ceiling from its own contribution margin (protect net
+≥ ~15%) and **refuses** the write if it would breach. Mirrors the existing `answer_tacos.py` refusal
+pattern — a missing margin/threshold → refuse with reason, never a default.
+**Why differentiator:** A flat 25% TACOS loses money on thin SKUs (portfolio break-even ≈ 39% t30).
+The gate is the difference between "spend more" and "spend more *only where the margin survives it*."
+**Status:** PROJECT.md flags this as closing the write-safety gap; execution plan §A note 5 says
+**"No engine bid/budget gate yet"** — this is net-new engine work, the critical path.
+**Tiering:** aggressive winners up to ~25% TACOS, MAINTAIN ~28% ACOS, thin SKUs ≤ ~12%, CUT/exit = $0.
+
+### D2 — Daily ranked action queue (dollar-ordered, pre-dry-run'd)
+**What:** Each day the engine emits a ranked list of proposed PPC writes, each already dry-run-validated,
+ordered by dollar impact (waste stopped or efficient revenue unlocked). The existing Action Inbox is the
+surface; this feeds it.
+**A good queue row contains:** object (campaignId/targetId/adId) + current value → proposed value +
+evidence (engine ACOS/TACOS/ROI + source export + window) + estimated monthly Δ + reversibility class
+(standing vs explicit) + dryRun status (VALIDATED) + gate result (passed / refused + why).
+**What belongs in the queue daily:** (a) overspend brakes — ACOS/TACOS-breaching keywords to bid-down
+or pause; (b) waste — zero-order search terms ≥$ threshold to negate; (c) capped winners to fund;
+(d) harvested terms ready to graduate; (e) inventory-pacing brakes (D4); (f) gate refusals shown as
+"wanted to scale X but the margin floor blocks it."
+**Why differentiator:** Turns a one-off teardown into a standing operating rhythm. The teardown found
+winners *manually*; the queue finds them every day.
+
+### D3 — Harvest loop (auto → graduate converting terms → exact, with same-session negation)
+**What:** One SP Auto campaign per family (close+loose) discovers search terms; a weekly cycle promotes
+converting terms (graduation criteria: ≥2–3 orders, ACOS ≤ tier target, repeat volume) into the exact
+campaign **and simultaneously adds them as exact negatives in the auto source** — or you pay twice and
+bid against yourself.
+**Why differentiator:** The teardown's §6 root finding was "**no harvest loop** — all AUTO paused, no
+term discovery feeding exact." Campaign E (Auto-Cookies-Harvest) is the seed. Mature accounts run 3–5×
+more negatives than positives; the loop is how that ratio gets built. The "negate the source in the
+same session" rule is the easy-to-miss correctness requirement (verified against practitioner sources).
+**Confidence:** HIGH on the mechanic; MEDIUM on exact graduation thresholds (live in `state/targets.md`,
+not invented here).
+
+### D4 — Inventory-paced spend (don't overspend a 4-unit SKU)
+**What:** Spend is gated on sellable stock, not just demand. Before funding/scaling a SKU, check FBA
+qty × velocity ≥ ~6 weeks of cover (CLAUDE.md / rebuild §7: "never scale spend onto a listing under
+6 weeks of stock"). Low-stock SKUs are *capped or held*, not funded. GG-0DC1 (1 unit) and EU-Z87B
+(0 FBA) are gated examples already in the docs.
+**Why differentiator:** Without this, the queue would pour budget into a SKU that sells out in days,
+generating clicks that hit out-of-stock / buy-box-lost listings — pure waste. This is the "sell
+*through* existing inventory" half of the mission metric.
+**Note:** the read-only inventory check (FBA qty from listings export) is in-scope as a *gate input*;
+actually changing inventory (restocks) is OUT.
+
+### D5 — Reversibility-classed autonomy (standing vs explicit approval)
+**What:** The write layer tags each proposed action by reversibility. Pause / negative / bid-down →
+**standing approval** (auto-apply after dry-run validates). Budget-up / bid-up / new campaign / placement-up
+→ **explicit per-action approval**. `CAMPAIGNS_REMOVE` (archive) → explicit + batched separately.
+**Why differentiator:** Lets the system act fast on the safe, high-frequency moves (daily brake-tapping)
+without nagging, while keeping a human firmly on every dollar of new spend. This is the autonomy model in
+PROJECT.md key decisions, made operational.
+
+### D6 — Partial-build detection & rollback for chained writes
+**What:** A new campaign is 3–4 chained async actions. If link 3 fails, the system must detect the
+half-built campaign (empty ad group / no targets), surface it, and either complete or remove it — never
+leave an orphan ENABLED campaign that could spend.
+**Why differentiator:** DataDoe actions are async and per-object; nothing guarantees atomicity across the
+chain. Quietly leaving a budgeted-but-malformed campaign live is exactly the silent spend the constitution
+forbids.
+
+---
+
+## Anti-Features (explicitly OUT for this milestone)
+
+| Anti-feature | Why OUT | What to do instead |
+|---|---|---|
+| **Listing-content writes** (`AMAZON_LISTINGS_UPDATE`) — titles, bullets, images, A+ | PROJECT.md: PPC-only milestone; listing rebuilds stay reviewed artifacts applied manually. | Gate PPC on listing readiness as a *read-only input* (don't scale a 1.1% converter); leave the fix to the operator. |
+| **Restocks / new inventory / AWD POs** | Out of scope; "work the existing FBA stock only." | Inventory is a *spend gate input* (D4), never a write target. Gated SKUs (GG-0DC1, EU-Z87B) wait. |
+| **Catalog refresh** — retire/add SKUs, build variations, the 800g-flagship restock push | Deferred: "after we make a base in the PPC." | Advertise only the current active catalog. |
+| **Autonomous spend-up** — any bid/budget/placement increase or new campaign applied without explicit human approval | Constitution hard rule; prior third party abused PPC writes. | Standing approval covers only reversible *down/stop* moves; every dollar of *new* spend is explicit. |
+| **Portfolio creation/assignment via API** | Execution plan §A limit 1: **no portfolio action exists** in DataDoe. | Either skip portfolios and encode tier in campaign **name + tags**, OR operator creates 3 tier portfolios once in console and we assign `portfolioId` on create. (Open decision.) |
+| **Shared-negative-list (library) object** | §A limit 2: no library object exists. | Apply the negative set to each ENABLED campaign individually; re-add at every new-campaign launch. More calls, same effect. |
+| **Hard-delete of campaigns** | §A limit 3: `state` enum is only ENABLED/PAUSED; `CAMPAIGNS_REMOVE` = recoverable archive. | Treat archive as low-reversibility; batch it, approve separately, run last. |
+| **Trusting next-day DataDoe exports to confirm a write** | ≤24h reporting lag; writes are immediate. | Reconcile via `actions_get` + console only (T11). |
+| **Sponsored Brands / Sponsored Display builds** | Teardown §6: SB/SD fully paused; SB revisit is gated behind listing/A+ fixes (themselves OUT). | Sponsored Products only this milestone. Re-enable SB ToS-only later, after listing fixes land. |
+| **Up-and-down dynamic bidding as default** | "Amazon can double your bids" — conflicts with a margin-floor, sell-through-stock posture. | Default **dynamic down-only** (budget-safe); reserve up-and-down for engine-verified high-margin winners, under the D1 gate. (MEDIUM-confidence recommendation.) |
+| **Inventing a bid, budget, or threshold** | Constitution rule 4; §A limit 5: no engine bid gate exists yet. | Bids/budgets come from the approved 06-12/06-16 sheets or the engine; a missing threshold → refuse the write ("no threshold set"). |
+
+---
+
+## Feature → Existing-Artifact Dependencies
+
+| Feature | Depends on (existing) | Net-new work this milestone |
+|---|---|---|
+| T1 propose→dryRun→reconcile loop | DataDoe `actions_start`/`actions_get` (enabled 2026-06-20, dryRun verified); Action Inbox surface | The orchestration wrapper + reconcile-via-status logic |
+| T2 FIND primitives | Live SP pull already exists (`data/ads_sp_campaigns_live_2026-06-20.json`, action `04aa6489`) | FIND wrappers per object type; cache to `data/` |
+| T3 negatives / T4 bids / T5 budgets / T6 placement / T7 retarget | Change sheet §8 (06-12) supplies exact current→proposed values + evidence | Per-action payload builders |
+| T8/T9 new campaign chain + match types | Build sheet (06-16) campaigns A–E with seed keywords + match types + budgets | Chain orchestration + D6 partial-build safety |
+| **D1 margin-tiered TACOS/bid gate** | Existing `engine/scripts/answer_tacos.py` (refusal pattern to mirror); `state/targets.md` tiers; COGS/margin from `anabtawi-context` + DataDoe Profit-by-SKU | **Critical path** — engine grows a bid/budget guard (§A note 5: "no engine bid/budget gate yet") |
+| D2 daily ranked queue | Action Inbox; engine ACOS/TACOS/ROI JSON outputs; cached exports in `data/` | Ranking + queue-assembly logic; daily run trigger (on-open, no cron) |
+| D3 harvest loop | Search-term exports (e9509054 pattern); Campaign E (auto seed) in 06-16; rebuild §7 HERO-TOF-Auto | Weekly harvest job: pull terms → graduation filter → `TARGETS_ADD` exact + negate source |
+| D4 inventory-paced spend | Listings-with-COGS export (b18aadfd) for FBA qty; rebuild §7 6-week rule | Stock-cover check as a gate input before any fund/scale proposal |
+| D5 reversibility classes | PROJECT.md autonomy decision; `state/decisions.md` ledger | Tag each action type; standing vs explicit routing in the Inbox |
+| D6 partial-build rollback | DataDoe action async semantics | Chain-state tracker + orphan detection |
+| T12 logging | `state/decisions.md` (append-only), `brain/raw/` | Action-result → ledger writer |
+
+**Build/rollout order = the execution-plan waves (06-20 §C):** Wave 0 (FIND) + Wave 1 (stop-the-bleed:
+pauses, negatives, bid-downs — all standing-approval class) ship first and exercise T1–T4 + D5. Waves 2–5
+layer in budgets, new builds, and hygiene, and require D1 (the gate) before any scaling. **Build D1
+alongside Wave 1** so it's ready before Wave 2 spend-up.
+
+---
+
+## Open Questions for Planning
+
+1. **Portfolios (blocks clean Wave 4 structure, not Wave 1):** skip and encode tier in name+tags, or
+   operator creates 3 tier portfolios in console once and we assign `portfolioId` on create? (§D.1.)
+2. **Margin-gate inputs:** is per-SKU contribution margin reliably available from DataDoe Profit-by-SKU
+   for *every* advertised SKU, or do some fall back to `cogs`/FX? A SKU with no margin data → the gate
+   must refuse to scale it (no default). Confirm coverage before Wave 2.
+3. **Graduation thresholds for the harvest loop:** set the exact criteria in `state/targets.md`
+   (orders ≥ N, ACOS ≤ tier target, min weekly volume). Practitioner norm ≈ 3 orders / ACOS ≤ break-even /
+   5+ weekly searches — operator dials, not invented constants.
+4. **Inventory-cover threshold as a hard gate value:** rebuild §7 says "6 weeks." Confirm as the binding
+   number in `state/targets.md` and define the velocity source/window for the cover calc.
+5. **Daily-queue trigger under the desktop constraint:** no unattended cron (Mac must be awake). Is the
+   "daily" queue on-open / on-demand, or does it assume an always-on Mac? Affects D2's cadence promise.
+6. **Bid-strategy default:** confirm dynamic **down-only** as the portfolio default, with up-and-down
+   reserved (under D1) for named high-margin winners — or leave per-campaign strategies untouched this
+   milestone and only change the bids/budgets/placement explicitly listed in the sheets.
+7. **Archive batch authorization:** `CAMPAIGNS_REMOVE` the ~57+2 graveyard now, or leave PAUSED?
+   (Low reversibility — §D.3.)
+8. **Standing-approval magnitude cap:** does standing approval on bid-DOWN have a ceiling (auto-apply
+   ≤ −X% but route a −80% slash to explicit review)? Define the boundary so "reversible" doesn't quietly
+   include a winner-killing cut.
+
+---
+
+_File is the deliverable. No account changes; no commit (orchestrator commits after all researchers complete)._
