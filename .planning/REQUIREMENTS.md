@@ -58,16 +58,42 @@ that protects net margin. PPC writes only; catalog refresh / restocks / listing 
 
 ## Traceability
 
-To be populated by the roadmapper — each requirement maps to exactly one phase.
+Each v2.0 requirement maps to exactly one phase (6–10). Risk-ascending build order:
+read-only substrate → margin gate (safety core) → reversible writes → ranked spend-up → irreversible last.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (filled during roadmap creation) | | |
+| WRITE-01 | Phase 6 — FIND + Lifecycle Substrate | Pending |
+| WRITE-02 | Phase 6 — FIND + Lifecycle Substrate | Pending |
+| WRITE-05 | Phase 6 — FIND + Lifecycle Substrate | Pending |
+| GATE-01 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| GATE-02 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| GATE-03 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| GATE-04 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| GATE-05 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| WRITE-03 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
+| WRITE-06 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
+| WRITE-07 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
+| EXEC-01 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
+| WRITE-04 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| QUEUE-01 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| QUEUE-02 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| QUEUE-03 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| QUEUE-04 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| EXEC-02 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| EXEC-05 | Phase 9 — Daily Ranked Queue + Explicit-Approval Spend-Up | Pending |
+| EXEC-03 | Phase 10 — New Coverage-Gap Campaigns + Archive Hygiene | Pending |
+| EXEC-04 | Phase 10 — New Coverage-Gap Campaigns + Archive Hygiene | Pending |
 
 **Coverage:**
 - v2.0 requirements: 21 total
-- Mapped to phases: (TBD)
-- Unmapped: (TBD)
+- Mapped to phases: 21/21 ✓ (each to exactly one phase; no orphans, no duplicates)
+- Unmapped: 0
+
+Per-phase counts: Phase 6 = 3 (WRITE-01/02/05) · Phase 7 = 5 (GATE-01..05) ·
+Phase 8 = 4 (WRITE-03/06/07, EXEC-01) · Phase 9 = 7 (WRITE-04, QUEUE-01..04, EXEC-02/05) ·
+Phase 10 = 2 (EXEC-03/04). Total 3+5+4+7+2 = 21.
 
 ---
 *Requirements defined: 2026-06-20*
+*Traceability completed by roadmapper: 2026-06-20 — 21/21 mapped, Phases 6–10*

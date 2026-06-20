@@ -111,3 +111,119 @@ Supabase is **deferred**, not removed (operator lacked account/MCP access at bui
 ---
 *Roadmap created: 2026-06-08*
 *All 21 v1 requirements mapped. No write path to Amazon in any phase.*
+
+---
+
+# Roadmap: Habib OS — Milestone v2.0 (Execution Era — Gated PPC Write Path)
+
+**Created:** 2026-06-20
+**Milestone:** v2.0 — Turn reviewed PPC artifacts into real, approval-gated account changes via the DataDoe Ads write actions (`actions_start`), selling through existing FBA stock at a per-SKU margin-tiered TACOS. PPC writes only.
+**Core Value:** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — every account change is `dryRun` → approve → apply → reconcile → log, governed by a per-SKU margin gate that protects net margin ≥ ~15%.
+**Granularity:** standard
+**Numbering:** Continues from Milestone 1 (which ended at Phase 5). Phases 6–10. M1 phases 1–5 above are preserved intact.
+
+## Shape (M2)
+
+A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycle) is proven first, then the **margin gate** ships as the load-bearing safety core (a hard predecessor to any spend increase, refusing while the min-margin threshold is empty), then the first **real writes** are only reversible stop-the-bleed moves under standing approval, then a **daily ranked queue** wires explicit-approval spend-up through the passing gate, and finally the **lowest-reversibility** moves (new-campaign chains, then graveyard archive in its own separately-approved batch) run last. The seam from M1 is reused verbatim: the agent does all MCP I/O; hand-written, pytest-covered Python builds the payload, gates on margin, classifies the async responses, and writes the decision log. No autonomous spend-up; every write logs to `state/decisions.md` + `brain/raw/`.
+
+## Constitution constraints (binding across all M2 phases)
+
+- **DataDoe data layer stays READ-ONLY** for *analysis*; the only write surface is the gated `actions_start` path. Python never opens a socket (the agent does MCP).
+- **Money math is hand-written + pytest-covered** (`engine/`); the gate is the new money-logic contract and `cd engine && uv run pytest` must stay green. Never auto-generate gate logic.
+- **Never invent a number or a threshold.** Missing min-margin / tier ceiling / SKU margin → typed refusal ("no threshold set"), never a default 25%.
+- **No autonomous writes.** Reversible moves (pause / negative / bid-down) ride *standing* approval within a magnitude cap and still log; spend-up / new campaigns / archive require *explicit* approval.
+- **Every write follows** FIND → build → gate → dryRun → approve → apply → poll `actions_get` → reconcile (via `actions_get` COMPLETED + console, **never** next-day DataDoe ≤24h exports) → log.
+
+## Blocking preconditions (operator must clear before the phases they gate)
+
+| Precondition | Gates | Phase |
+|---|---|---|
+| Operator sets `min_net_margin_pct` (~15%) in `thresholds.toml` (currently empty `""`) | Gate passes on nothing until set | **Phase 7** (and any spend-up in 9–10) |
+| SKU→tier/contribution-margin table made machine-readable in `anabtawi-context` | Gate refuses any unfiled SKU | **Phase 7** (binding before spend-up in Phase 9) |
+| Org-enable each Ads action type in DataDoe Settings → Actions (reversible set first; hold CAMPAIGNS_ADD/REMOVE) | A real run against a disabled type is rejected | **Phase 8** (reversible set), **Phase 10** (ADD/REMOVE) |
+| Portfolios decision resolved (tier in name+tags, or Rami creates 3 console portfolios) | Clean new-campaign structure | **Phase 10** |
+| Per-tier ceiling formula + contribution-margin source pinned (Q2) | `gate.py` cannot be written without it | **Phase 7** |
+
+## Phases (M2)
+
+- [ ] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk
+- [ ] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend)
+- [ ] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - First real writes land: pause / negative / bid-down under standing approval, idempotent, every action logged to `decisions.md` + `brain/raw/`; the dead-SKU spend bleed is stopped and the own-ASIN denylist enforced
+- [ ] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover
+- [ ] **Phase 10: New Coverage-Gap Campaigns + Archive Hygiene** - The lowest-reversibility moves run last: chained new-campaign builds (paced to in-stock inventory, with partial-build rollback), then the graveyard `CAMPAIGNS_REMOVE` archive in its own separately-approved final batch
+
+## Phase Details (M2)
+
+### Phase 6: FIND + Lifecycle Substrate
+**Goal**: The async write loop is proven end-to-end on operations that cannot change the account — live entity IDs are pulled and cached, dryRun and `actions_get` responses are classified by hand-written code, and reconciliation discipline (status-not-export) is established — so every later write rides a verified substrate. (Runbook Wave 0.)
+**Depends on**: Phase 5 (M1 read primitives + trust spine) complete enough to feed proposals later; no M2 predecessor.
+**Requirements**: WRITE-01, WRITE-02, WRITE-05
+**Success Criteria** (what must be TRUE):
+  1. A PPC write can be validated as a `dryRun` (`actions_start dryRun:true`) and the response is classified by hand-written `lifecycle.py` (VALIDATED / valid / issues[]) into proceed-vs-stop — proving the harness without any real write landing (WRITE-01).
+  2. Live `campaignId` / `adGroupId` / `targetId` / `adId` are pulled via `*_FIND` (one ad-product per request) and cached to `data/ads_*_find_*.json`; a write whose IDs are not in cache is refused at build ("stale/missing entity ID") — FIND-before-write is enforced, not assumed (WRITE-02).
+  3. An applied action's status is reconciled via `actions_get` polled to a terminal state (COMPLETED / FAILED / CANCELLED, no infinite spin, reusing `datadoe.poll_status` terminal-on-FAILED) plus a `*_FIND` echo — and the code explicitly refuses to treat a next-day DataDoe export (≤24h lag) as confirmation; a FAILED/blocked action surfaces the returned error cleanly (WRITE-05).
+  4. The `actions_get` terminal-status enum is confirmed via `actions_details_schema_get` and pinned into the engine's terminal set; `datadoe-query` SKILL gains the write-action reference (the four `actions_*` tools, FIND-before-write, dryRun discipline).
+  5. Every `actions_start`/`actions_get` call is wrapped by `logged_call` into `external-calls.jsonl` (never logging the seller UUID).
+**Plans**: TBD
+
+### Phase 7: Margin-Tiered Safety Gate
+**Goal**: The load-bearing safety guardrail exists, is hand-written and pytest-covered, and refuses before Amazon ever sees a spend-increasing write — each SKU's TACOS ceiling derived from its own contribution margin to hold net margin ≥ ~15%, refusing (never defaulting, never silently clamping) when a threshold, ceiling, or SKU margin is missing. This phase must pass the gate on nothing until the operator sets the real floor. (Runbook safety prerequisite; the gap flagged in execution-plan §A.5.)
+**Depends on**: Phase 6
+**Requirements**: GATE-01, GATE-02, GATE-03, GATE-04, GATE-05
+**Success Criteria** (what must be TRUE):
+  1. The engine computes each SKU's contribution margin from DataDoe window-summed components as a typed, tested result — never prose, never auto-generated (`gate.py` + `test_gate.py`, mirroring `tacos.py`) (GATE-01).
+  2. From that margin the engine derives a per-SKU TACOS ceiling that protects the configured `min_net_margin_pct`; while that threshold is empty (`""` today) the gate returns a typed refusal ("no threshold set") on every write — never a default 25% (GATE-02).
+  3. A spend-increasing write (bid-up / budget-up / placement-up / new-campaign) passes only when its projected TACOS ≤ that SKU's ceiling; a spend-decreasing write (pause / negative / bid-down) always passes the gate (GATE-03).
+  4. An over-ceiling bid/budget or sub-floor price is **refused** (a typed `GateRefusal` naming the breached number and its source), never silently clamped to the limit (GATE-04).
+  5. The SKU→tier/contribution-margin table is machine-readable (a parseable per-SKU row the gate consumes directly); a SKU absent from the table yields a gate refusal on funding it — correct behavior, surfaced as such (GATE-05).
+**Plans**: TBD
+
+### Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed
+**Goal**: The first real account writes land — but only reversible ones (pause campaign/keyword/ad, add negative keyword, lower a bid) under standing approval within a magnitude cap — each built, gated (auto-pass as spend-decreasing), dry-run'd, applied, polled to COMPLETED, reconciled, and logged idempotently. Applying this spine to the runbook stops the dead-SKU spend bleed (~$279/mo, ~43% of spend, ~$0 sales loss) and enforces the own-ASIN denylist. (Runbook Wave 1.)
+**Depends on**: Phase 7 (gate must exist; reversible writes auto-pass but route through it)
+**Requirements**: WRITE-03, WRITE-06, WRITE-07, EXEC-01
+**Success Criteria** (what must be TRUE):
+  1. A reversible PPC write runs end-to-end — pause campaign/keyword/ad, add negative keyword, lower a bid — via build → dryRun → apply (`dryRun:false` → `actionId`) → poll `actions_get` to COMPLETED → confirm with a `*_FIND` echo (WRITE-03).
+  2. Every applied write logs a dated line to `state/decisions.md` and a `brain/raw/` note capturing what changed, why, expected effect, and the `actionId` — standing-approved actions log too (autonomy ≠ silence) (WRITE-06).
+  3. Re-running the same approved action does not double-apply: a content-hash idempotency key (persisted in `data/actions_ledger.jsonl`) maps to its COMPLETED `actionId` and re-runs are a no-op; an in-flight `actionId` resumes at poll, never re-fires the start (WRITE-07).
+  4. The stop-the-bleed batch is applied: remaining dead/exiting-SKU ad spend and mis-scoped keywords are paused, the negative-keyword harvest is applied per-campaign (exact-by-default, keep-positive allowlist protecting `baklava gift box`, "watch don't negate" terms bid-down not negated), and the EXCLUDE-own-ASIN denylist (B07TV972JT) refuses any payload targeting an owned ASIN before dryRun (EXEC-01).
+  5. Standing approval is bounded by a magnitude cap (a bounded % change per action) so a "reversible" bid-down cannot kill a winner; phrase/broad negatives and over-cap cuts route to explicit review.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up
+**Goal**: A daily, dollar-ranked, dry-run-validated queue of proposed PPC changes becomes the standing operating rhythm — each line showing current → proposed → expected effect with provenance — and gate-passed bid/budget raises fund the engine-verified efficient winners under explicit approval, never scaling onto immature attribution data, internal keyword competition, sub-cover stock, or below-benchmark conversion. (Runbook Waves 2–3.)
+**Depends on**: Phase 8 (apply spine) and Phase 7 (gate must *pass*, not just exist, for spend-up)
+**Requirements**: WRITE-04, QUEUE-01, QUEUE-02, QUEUE-03, QUEUE-04, EXEC-02, EXEC-05
+**Success Criteria** (what must be TRUE):
+  1. A daily queue (on-open / on-demand) renders dollar-ranked proposed PPC changes, each dry-run-validated and showing current → proposed → expected effect with provenance (`rank_queue.py` + `queue.py`, reusing the `tacos.classify` sort idiom, no-$-estimate rows last) (QUEUE-01).
+  2. The queue applies reversibility-classed autonomy: reversible moves carry standing approval (auto-apply after dryRun, within the magnitude cap from Phase 8); spend-increases and new campaigns are held for explicit approval (QUEUE-02, QUEUE-03).
+  3. Efficiency verdicts respect attribution lag via a two-class model — act-now (reversible stop-loss on obviously-dead campaigns: inactive listing / zero lifetime orders / ENABLED on discontinued SKU) vs judge-later (efficiency verdicts that wait for a matured window: ≥7d SP / ≥14d SB/SD); "3 clean days" means 3 days of *matured* data (QUEUE-04).
+  4. A spend-increasing write (raise bid/budget; the create-chain in Phase 10) executes only after passing the margin gate AND receiving explicit approval; an over-ceiling raise is refused, not clamped (WRITE-04).
+  5. Engine-verified efficient winners are funded up to their gate ceiling and internal keyword competition is consolidated (a term live in >1 ENABLED campaign is flagged and blocked from a bid-up until consolidated to one owning campaign) (EXEC-02); and no budget is scaled onto a SKU below the ≥6-week stock-cover or below-benchmark-conversion threshold — restock-gated SKUs (e.g. GG-0DC1 at 1 FBA unit) are refused until stock is confirmed (EXEC-05).
+**Plans**: TBD
+
+### Phase 10: New Coverage-Gap Campaigns + Archive Hygiene
+**Goal**: The lowest-reversibility moves run last and separately — chained new-campaign builds (paced to in-stock inventory, with partial-build detection and rollback so no orphan ENABLED empty campaign spends), then the campaign-graveyard archive via `CAMPAIGNS_REMOVE` in its own explicitly-approved final batch with per-ID pre-checks. (Runbook Waves 4–5.)
+**Depends on**: Phase 9 (gate-passed spend-up + queue) and the resolved portfolios decision; org-enable of CAMPAIGNS_ADD then CAMPAIGNS_REMOVE
+**Requirements**: EXEC-03, EXEC-04
+**Success Criteria** (what must be TRUE):
+  1. New coverage-gap campaigns are built via the chained `CAMPAIGNS_ADD` → `AD_GROUPS_ADD` → `ADS_ADD` → `TARGETS_ADD` sequence, each step gated on the prior `actions_get` COMPLETED + returned ID, the whole chain dry-run'd first, and any mid-chain failure rolled back (the partial build paused) so no orphan campaign spends (EXEC-03).
+  2. New-campaign budgets are paced to in-stock inventory and pass the margin gate on projected spend, and only build once the gate + apply spine are live (EXEC-03); the projected-TACOS seed assumption for a no-history campaign is pinned before any build.
+  3. The campaign graveyard is archived via `CAMPAIGNS_REMOVE` in a separate, explicitly-approved, dead-last batch — never bundled with reversible moves — with a per-ID pre-check (PAUSED + zero-spend ≥30d), and any still-ENABLED graveyard candidate goes pause → observe → archive across separate batches, never ENABLED→REMOVE in one step (EXEC-04).
+  4. The portfolios decision is honored (tier encoded in campaign name + tags, or `portfolioId` assigned on create if Rami created console portfolios), and shared negatives are re-added to each new campaign at launch (no shared-list object exists).
+**Plans**: TBD
+
+## Progress (M2)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 6. FIND + Lifecycle Substrate | 0/0 | Not started | - |
+| 7. Margin-Tiered Safety Gate | 0/0 | Not started | - |
+| 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/0 | Not started | - |
+| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
+| 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
+
+---
+*Milestone v2.0 roadmap created: 2026-06-20*
+*All 21 v2.0 requirements mapped to exactly one phase (6–10). Every write is dryRun→approve→apply→reconcile→log; the margin gate is a hard predecessor to any spend increase.*
