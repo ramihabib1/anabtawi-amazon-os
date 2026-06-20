@@ -1,14 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: executing
-last_updated: "2026-06-09T16:36:27.259Z"
+milestone: v2.0
+milestone_name: Execution Era — Gated PPC Write Path
+status: planning
+last_updated: "2026-06-20T18:19:29.463Z"
+last_activity: 2026-06-20
 progress:
-  total_phases: 5
+  total_phases: 0
   completed_phases: 0
-  total_plans: 7
-  completed_plans: 2
+  total_plans: 0
+  completed_plans: 0
   percent: 0
 ---
 
@@ -25,13 +26,10 @@ progress:
 
 ## Current Position
 
-Phase: 02 (slice-tacos-by-sku-trust-spine) — EXECUTING
-Plan: 1 of 3
-
-- **Phase:** 1 — Foundation
-- **Plan:** None yet (run `/gsd:plan-phase 1`)
-- **Status:** Executing Phase 02
-- **Progress:** [          ] 0/5 phases complete
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-06-20 — Milestone v2.0 started
 
 ## Performance Metrics
 

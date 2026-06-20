@@ -8,6 +8,26 @@ An AI-first operations workspace for Habib Distribution (Anabtawi Sweets — ~30
 
 From the desktop workspace I can ask real PPC/profit questions ("where am I wasting ad spend", "which search terms to negate", "what's my TACOS by SKU", "which campaigns are budget-capped") and get correct answers against live DataDoe data — with zero risk of the system changing anything on Amazon.
 
+## Current Milestone: v2.0 — Execution Era (Gated PPC Write Path)
+
+**Goal:** Turn the reviewed PPC artifacts into real, approval-gated changes on the live Amazon
+account via the DataDoe Ads write actions (`actions_start`) — building a PPC engine that **sells
+through the existing FBA inventory** efficiently, governed by a per-SKU margin-tiered TACOS gate.
+Catalog refresh (retire/add/variations), restocks, and listing writes are deferred to a later milestone.
+
+**Mission metric:** move the units already in FBA at a **healthy, margin-derived TACOS** — not a
+flat number. The engine sets each SKU's TACOS ceiling from its own contribution margin to protect
+a minimum **net margin ≥ ~15%** (portfolio break-even TACOS ≈ 39% t30; aggressive winners up to
+~25%; thin-margin SKUs ≤ ~12%). The $2,500→$10,000 (25% TACOS) instinct is retained only as the
+*aggressive ceiling on high-margin winners*, never the blended target.
+
+**Target features:**
+- Ad write execution via `actions_start` — pause / bid / budget / negatives / retarget + new-campaign builds, always `dryRun` → approve → apply → reconcile via `actions_get`.
+- Engine margin-tiered TACOS/bid gate — refuses any write that would breach the per-SKU net-margin floor (mirrors the existing TACOS refusal; closes the flagged write-safety gap).
+- Approval + logging spine — standing approval for reversible moves (pause/negatives/bid-down); explicit approval for budget/bid increases and new campaigns; every action logged to `decisions.md` + `brain/`.
+- Daily ranked action queue — each day a dry-run'd, dollar-ranked queue of proposed PPC changes.
+- Inventory-paced budget ramp — spend where there's sellable stock + demand; start ~$1.2–1.5k/mo, scale only as winners hold the gate.
+
 ## Requirements
 
 ### Validated
@@ -33,9 +53,11 @@ From the desktop workspace I can ask real PPC/profit questions ("where am I wast
 <!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
 
 - Any autonomous write to Amazon (bids, budgets, negatives, pricing, inventory, listings) — structural guardrail; a prior third party abused PPC/listing writes. Writes are always human-approved, logged proposals.
-- A custom Amazon Ads / SP-API write-MCP — deferred, gated milestone; manual execution until recommendations earn trust.
-- Listing optimization intelligence — Milestone 2, not this cycle.
-- Scheduled/recurring PPC review — Milestone 3, not this cycle.
+- A custom Amazon Ads / SP-API write-MCP — superseded: the **DataDoe Ads actions** (`actions_start`) are the gated write path, enabled for this org as of 2026-06-20. Milestone 2 uses them.
+- Listing-content writes (`AMAZON_LISTINGS_UPDATE`) — deferred to a later milestone; Milestone 2 is **PPC writes only**. Listing rebuilds stay reviewed artifacts applied manually for now.
+- Catalog refresh — retiring weak products, adding new products, building new variations, the 800g-flagship-via-restock push — deferred to a later milestone (operator: "after we make a base in the PPC").
+- New inventory / restocks — out of scope for Milestone 2; work the existing FBA stock only.
+- Scheduled/recurring PPC review — later milestone.
 - Agent Central as a data source — removed; DataDoe is the single Amazon source (its org has the Ads connection attached).
 - Marketplaces beyond amazon.ca for *logic* — US data is schema-ready but US-specific logic is deferred until CA is solid.
 - Unattended clock-cron scheduling — desktop app runs only while the Mac is awake/open; Milestone 1 is conversational/on-demand.
@@ -70,6 +92,10 @@ From the desktop workspace I can ask real PPC/profit questions ("where am I wast
 | Margin authority = DataDoe premium "Profit by SKU & Date", `cogs` as fallback | Premium source already computes net profit/ACOS/TACOS/ROI; `cogs` reconciles FX and covers SKUs the premium source misses. | — Pending |
 | DataDoe is the single Amazon source (Agent Central removed) | DataDoe org has the Ads connection attached; one source is simpler and sufficient. | — Pending |
 | One resident agent with skills, not a fleet | Simpler memory/persona model; capabilities are skills on one agent. | — Pending |
+| **M2 write path = DataDoe `actions_start`** (not a custom SP-API MCP) | Ads + Listings actions enabled for this org 2026-06-20; gated 4 ways (connection · dryRun · human approval · DataDoe org-enable). | ✓ Good (Ads live, dryRun verified) |
+| **M2 efficiency gate = per-SKU margin-tiered TACOS** (not flat 25%) | Real contribution margin ~39% t30; a flat 25% loses money on thin SKUs. Engine derives each ceiling to protect net ≥ ~15%. | — Pending |
+| **M2 = PPC writes only; sell through existing stock** | Operator: build a proven PPC base first, then refresh the catalog. No restocks / listing writes this milestone. | — Pending |
+| **Autonomy = standing approval for reversible moves** | Pauses/negatives/bid-downs auto-apply after dry-run; spend-up/new campaigns/price need explicit approval. | — Pending |
 
 ### Open (resolve in discuss-phase)
 
@@ -99,4 +125,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-08 after initialization*
+*Last updated: 2026-06-20 — started Milestone v2.0 (Execution Era — Gated PPC Write Path)*
