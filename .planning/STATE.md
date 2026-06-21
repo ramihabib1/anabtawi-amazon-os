@@ -26,10 +26,10 @@ progress:
 
 ## Current Position
 
-Phase: 6 — FIND + Lifecycle Substrate (Not started — roadmap just created)
+Phase: 6 — FIND + Lifecycle Substrate (Planned — 4 plans, 3 waves)
 Plan: —
-Status: Roadmap approved/written; awaiting `/gsd:plan-phase 6`
-Last activity: 2026-06-20 — Milestone v2.0 roadmap created (Phases 6–10), 21/21 requirements mapped
+Status: Plans written (06-01..06-04); awaiting `/gsd:execute-phase 6`
+Last activity: 2026-06-21 — Phase 6 decomposed into 4 plans (Wave 0 tests/fixtures → classifiers/cache → SKILL doc + live MCP confirm); WRITE-01/02/05 covered
 
 ## Performance Metrics
 
@@ -77,7 +77,7 @@ None hard-blocking roadmap; three operator preconditions (min-margin floor, mach
 ## Session Continuity
 
 - **Last action:** Milestone v2.0 roadmap created from PROJECT/REQUIREMENTS/research + execution-plan runbook (2026-06-20). Phases 6–10 written, 21/21 requirements mapped, traceability filled.
-- **Next action:** `/gsd:plan-phase 6` to decompose FIND + Lifecycle Substrate into executable plans. Operator should also begin clearing Phase 7 preconditions (set `min_net_margin_pct`, machine-readable SKU→margin table).
+- **Next action:** `/gsd:execute-phase 6` (start Wave 1 = 06-01). Operator should also begin clearing Phase 7 preconditions (set `min_net_margin_pct`, machine-readable SKU→margin table).
 
 ---
 *State initialized: 2026-06-08 · Milestone v2.0 roadmap state set: 2026-06-20*
