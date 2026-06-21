@@ -166,8 +166,8 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
   5. Every `actions_start`/`actions_get` call is wrapped by `logged_call` into `external-calls.jsonl` (never logging the seller UUID).
 **Plans**: 4 plans (3 waves)
 - [x] 06-01-PLAN.md — Wave 0: pin the verified ACTION_* status enum + add Proceed/PollOutcome; write the RED test_lifecycle/test_find_cache + sanitized fixtures (WRITE-01/02/05)
-- [ ] 06-02-PLAN.md — lifecycle.py classify_dryrun + classify_poll + the two thin logged_call CLIs (WRITE-01/05)
-- [ ] 06-03-PLAN.md — find_cache.py write/lookup with missing→refuse, FIND-before-write enforced at build (WRITE-02)
+- [x] 06-02-PLAN.md — lifecycle.py classify_dryrun + classify_poll + the two thin logged_call CLIs (WRITE-01/05)
+- [x] 06-03-PLAN.md — find_cache.py write/lookup with missing→refuse, FIND-before-write enforced at build (WRITE-02)
 - [ ] 06-04-PLAN.md — datadoe-query SKILL write-action reference + live read-only actions_get/schema confirmation (SC-4)
 
 ### Phase 7: Margin-Tiered Safety Gate
@@ -222,7 +222,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. FIND + Lifecycle Substrate | 1/4 | In Progress|  |
+| 6. FIND + Lifecycle Substrate | 3/4 | In Progress|  |
 | 7. Margin-Tiered Safety Gate | 0/0 | Not started | - |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/0 | Not started | - |
 | 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
