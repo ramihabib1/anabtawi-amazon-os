@@ -429,7 +429,7 @@ min_net_margin_pct = 15   # D-07: seed the real floor (was min_margin_pct = "")
 
 **Note:** The core D-03 finding (profit is POST-ad, add ad_spend back) is **VERIFIED, not assumed** — it is proven both by the source-map definition and by exact fixture arithmetic. Only the secondary items above carry residual assumption risk.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Unreliable-COGS refusal trigger (A2 above).**
    - What we know: D-03 says a 0/null export COGS → unreliable → refuse; the catalog `cogs` is the cross-check.
