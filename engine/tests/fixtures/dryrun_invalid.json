@@ -1,0 +1,24 @@
+{
+  "actionId": null,
+  "type": "AMAZON_ADS_CAMPAIGNS_UPDATE",
+  "status": "VALIDATED",
+  "dryRun": true,
+  "request": {
+    "type": "AMAZON_ADS_CAMPAIGNS_UPDATE",
+    "details": {}
+  },
+  "validation": {
+    "valid": false,
+    "issues": [
+      {
+        "path": ["details", "campaigns", 0, "budgets"],
+        "code": "BUDGET_TOO_LOW",
+        "message": "Daily budget must be at least 1.00 CAD; the requested value is below the marketplace minimum."
+      }
+    ]
+  },
+  "result": null,
+  "error": null,
+  "cause": null,
+  "queuedAt": null
+}

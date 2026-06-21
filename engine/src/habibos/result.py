@@ -33,6 +33,35 @@ class Refusal:
 
 
 @dataclass(frozen=True)
+class Proceed:
+    """The dryRun PROCEED verdict (WRITE-01).
+
+    Returned by lifecycle.classify_dryrun ONLY when a dryRun is clean
+    (status=="VALIDATED" && validation.valid && validation.issues==[]). It is the typed
+    positive counterpart to Refusal — never a bare True. action_type carries the
+    AMAZON_ADS_*-prefixed action type that validated, so the caller can wire the real run.
+    """
+
+    action_type: str
+
+
+@dataclass(frozen=True)
+class PollOutcome:
+    """A classified single actions_get response (WRITE-05).
+
+    status is the verbatim wire status; state is the engine's classification, one of
+    "done" (ACTION_TERMINAL_SUCCESS), "done_with_issues" (ACTION_TERMINAL_PARTIAL), or
+    "in_flight" (ACTION_IN_FLIGHT). A terminal-failure or unmodeled status is NOT a
+    PollOutcome — it returns a Refusal (so a failed action can never read as "done").
+    issues carries any surfaced messages verbatim (empty for a clean terminal/in-flight).
+    """
+
+    status: str
+    state: str  # "done" | "done_with_issues" | "in_flight"
+    issues: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class SkuRow:
     """One per-SKU row.
 

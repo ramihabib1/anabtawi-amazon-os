@@ -1,0 +1,18 @@
+{
+  "actionId": null,
+  "type": "AMAZON_ADS_CAMPAIGNS_UPDATE",
+  "status": "VALIDATED",
+  "dryRun": true,
+  "request": {
+    "type": "AMAZON_ADS_CAMPAIGNS_UPDATE",
+    "details": {}
+  },
+  "validation": {
+    "valid": true,
+    "issues": []
+  },
+  "result": null,
+  "error": null,
+  "cause": null,
+  "queuedAt": null
+}
