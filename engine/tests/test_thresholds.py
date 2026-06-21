@@ -27,11 +27,17 @@ def test_reads_seeded_ceiling() -> None:
 
 def test_missing_threshold_returns_none() -> None:
     # Empty string ("") in the TOML -> None (caller renders "no threshold set"), D-08.
-    assert thresholds.read("min_margin_pct", "CA") is None
+    # Repointed off `min_margin_pct` (renamed -> min_net_margin_pct and seeded = 15 in
+    # Plan 02) to `days_of_cover_floor`, which remains "" -> the empty-refusal path stays
+    # covered.
+    assert thresholds.read("days_of_cover_floor", "CA") is None
     # An absent key in the [marketplace.CA] block -> None.
     assert thresholds.read("a_key_that_does_not_exist", "CA") is None
     # An absent marketplace -> None (never a default).
     assert thresholds.read("acos_ceiling_pct", "ZZ") is None
+    # Locks the seeded margin floor. EXPECTED RED until Plan 02 seeds
+    # min_net_margin_pct = 15 in thresholds.toml — the intended Wave 1 -> Wave 2 signal.
+    assert thresholds.read("min_net_margin_pct", "CA") == 15.0
 
 
 def test_default_marketplace_is_ca() -> None:
