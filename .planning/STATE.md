@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: Execution Era — Gated PPC Write Path
-status: "Plans written (06-01..06-04); awaiting `/gsd:execute-phase 6`"
-last_updated: "2026-06-21T13:29:24.646Z"
-last_activity: 2026-06-21 — Phase 6 decomposed into 4 plans (Wave 0 tests/fixtures → classifiers/cache → SKILL doc + live MCP confirm); WRITE-01/02/05 covered
+status: executing
+last_updated: "2026-06-21T13:31:33.885Z"
+last_activity: 2026-06-21 -- Phase 06 execution started
 progress:
   total_phases: 5
   completed_phases: 0
@@ -21,15 +21,15 @@ progress:
 
 - **Core value (M2):** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — turning reviewed PPC artifacts into real, approval-gated account changes via DataDoe `actions_start`, with the margin gate protecting net margin ≥ ~15% and zero autonomous spend-up.
 - **Milestone:** v2.0 — Execution Era (Gated PPC Write Path). PPC writes only; catalog refresh / restocks / listing writes deferred.
-- **Current focus:** Phase 6 — FIND + Lifecycle Substrate (read-only async proof; zero account risk)
+- **Current focus:** Phase 06 — find-lifecycle-substrate
 - **Project mode:** execution-layer on the M1 read-only engine (agent does MCP I/O; hand-written, pytest-covered Python owns the money truth)
 
 ## Current Position
 
-Phase: 6 — FIND + Lifecycle Substrate (Planned — 4 plans, 3 waves)
-Plan: —
-Status: Plans written (06-01..06-04); awaiting `/gsd:execute-phase 6`
-Last activity: 2026-06-21 — Phase 6 decomposed into 4 plans (Wave 0 tests/fixtures → classifiers/cache → SKILL doc + live MCP confirm); WRITE-01/02/05 covered
+Phase: 06 (find-lifecycle-substrate) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 06
+Last activity: 2026-06-21 -- Phase 06 execution started
 
 ## Performance Metrics
 
