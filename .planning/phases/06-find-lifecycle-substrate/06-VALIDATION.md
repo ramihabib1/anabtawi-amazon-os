@@ -1,8 +1,8 @@
 ---
 phase: 6
 slug: find-lifecycle-substrate
-status: draft
-nyquist_compliant: false
+status: ready
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-06-20
 ---
@@ -79,7 +79,9 @@ created: 2026-06-20
 - [ ] Sampling continuity: no 3 consecutive tasks without automated verify
 - [ ] Wave 0 covers all MISSING references
 - [ ] No watch-mode flags
-- [ ] Feedback latency < 5s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] Feedback latency < 5s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+> `wave_0_complete` stays `false` until execution lands the Wave 0 (06-01) RED tests + sanitized fixtures.
+
+**Approval:** approved 2026-06-21 (planning-time; sign-off completes at execution)

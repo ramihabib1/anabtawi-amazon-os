@@ -386,14 +386,14 @@ ACTION_TERMINAL = ACTION_TERMINAL_SUCCESS | ACTION_TERMINAL_PARTIAL | ACTION_TER
 | A2 | A FIND-cache staleness window value is an operator dial, not invented here. | Pitfall 3 | If a default is hard-coded, it violates hard rule 4. **Mitigation:** Phase 6 only needs the miss-refuses test; the window is finalized in Phase 8 with operator input. |
 | A3 | `data/ads_sp_campaigns_live_2026-06-20.json` is a genuine `CAMPAIGNS_FIND` capture (its `{campaigns:[…]}` shape matches `ActionAdsCampaignsFindResult`). | Architecture / fixtures | If it was produced by a different tool with a divergent shape, the fixture is misleading. **Mitigation:** shape verified field-by-field against the spec; low risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **MCP-vs-REST field parity for `actions_get`.**
+1. **MCP-vs-REST field parity for `actions_get`.** — **RESOLVED:** deferred by design to 06-04 Task 2 (Success Criterion 4); the verified REST `ActionStatusResponse` is pinned as the high-confidence starting point and is confirmed live there.
    - What we know: the REST `ActionStatusResponse` is fully pinned (above).
    - What's unclear: whether the DataDoe MCP `actions_get` tool returns that object verbatim or wraps/renames it.
    - Recommendation: executor calls `actions_details_schema_get` (read-only, safe) and one live `actions_get` against any historical action to confirm before finalizing the `pydantic` model. Success Criterion 4 mandates this.
 
-2. **Where lifecycle result types live.**
+2. **Where lifecycle result types live.** — **RESOLVED:** planner added frozen `Proceed`/`PollOutcome` dataclasses (06-01) alongside the reused `result.Refusal`.
    - What we know: `result.py` has `Refusal/Answer/SkuRow`.
    - What's unclear: whether to reuse `Refusal` for stop/fail (its `code` field fits) or add `Proceed`/`PollResult` types.
    - Recommendation: reuse `Refusal` for the stop path (consistency); add a small `Proceed`/`PollOutcome` frozen dataclass for the success/in-flight path. Planner's call; either honors the typed-result contract.
