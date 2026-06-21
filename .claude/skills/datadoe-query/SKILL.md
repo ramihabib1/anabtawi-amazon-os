@@ -168,7 +168,11 @@ cd engine && uv run python scripts/classify_dryrun.py --artifact <dryRun_respons
 cd engine && uv run python scripts/classify_poll.py    --artifact <actions_get_response.json>  # → done / in_flight / refuse
 ```
 The `ActionStartResponse` shape is `status` (top-level) + a **nested** `validation:{valid, issues}`
-object (see `engine/tests/fixtures/dryrun_validated.json` / `dryrun_invalid.json`).
+object (see `engine/tests/fixtures/dryrun_validated.json` / `dryrun_invalid.json`). A clean
+validate returns `status:"VALIDATED"`, `validation.valid:true`, `issues:[]` (live-confirmed 2026-06-21).
+**Caution:** on `*_UPDATE` send **only** the mutable fields (e.g. `campaignId` + `state`/`budgets`);
+do **not** echo `adProduct` — the live request-validator rejects `adProduct` on `CAMPAIGNS_UPDATE`
+("adProduct is not allowed") even though `actions_details_schema_get` lists it as a campaign property.
 
 **3. Terminal-status enum (WRITE-05) — pinned verbatim** (matches `engine/src/habibos/datadoe.py`
 `ACTION_TERMINAL`; a wrong name spins an infinite poll):
