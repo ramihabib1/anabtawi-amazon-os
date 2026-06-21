@@ -23,8 +23,10 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # Directories that hold tracked source. The UUID must not appear in any of them.
 TRACKED_SOURCE_DIRS = ("src", "db", "tests")
 
-# File suffixes worth scanning (source + SQL + skill/markdown deliverables).
-SCAN_SUFFIXES = {".py", ".sql", ".md", ".toml", ".yaml", ".yml", ".sh", ".txt"}
+# File suffixes worth scanning (source + SQL + skill/markdown deliverables). ".json"
+# covers committed JSON fixtures/cache files under tracked dirs (e.g. tests/fixtures/*.json)
+# so a UUID-bearing fixture can no longer pass this scan silently (06-01 Task 1b / T-06-01).
+SCAN_SUFFIXES = {".py", ".sql", ".md", ".toml", ".yaml", ".yml", ".sh", ".txt", ".json"}
 
 
 def test_seller_id_in_env_not_code() -> None:
