@@ -1,0 +1,126 @@
+# Habib OS — per-SKU catalog: the SINGLE MACHINE-READABLE SOURCE OF TRUTH (D-04 / D-05).
+#
+# WHAT THIS IS
+#   The margin-tiered safety gate reads three things from this file at runtime:
+#     1. the canonical SKU set   — a SKU absent here is a REFUSAL on funding
+#                                  (`sku_not_in_catalog`), never a silent default (D-05).
+#     2. each SKU's `tier`        — HERO / MAINTAIN / CUT (drives PPC + restock posture).
+#     3. each SKU's `cogs`        — landed cost in CAD, used to compute contribution
+#                                  margin LIVE. A 0 / missing cogs => `no_margin` refusal.
+#
+# WHAT THIS FILE DOES *NOT* STORE (D-04, anti-pattern)
+#   No per-SKU margin. Margin is computed LIVE in the gate (Plan 03) from the SKU's
+#   real window economics; storing a margin here would let it drift from the truth.
+#   Only `asin`, `tier`, `cogs` per row — nothing pre-computed.
+#
+# SINGLE SOURCE OF TRUTH (D-05)
+#   The prose SKU table in `.claude/skills/anabtawi-context/SKILL.md` RENDERS FROM this
+#   file. Edit tier / COGS / the SKU set HERE and mirror into the prose table, never the
+#   reverse. The prose table can no longer silently disagree with the gate's input.
+#
+# COGS PROVENANCE (landed)
+#   `cogs` = landed `cogs_total_value` (CAD) — the reviewed landed cost per unit. Values
+#   here are reconciled from the committed, human-reviewed SKU deep-dive / rebuild packets
+#   in `deliverables/sku-deep-dives/` and the listing-audit rollup
+#   `deliverables/listing-audits/_rollup_2026-06-01.md` (the SKU->ASIN->tier authority).
+#   These trace to DataDoe `amazon_listings_with_cogs` / `amazon_profit_by_sku_and_date`
+#   (premium Profit-by-SKU, landed cogs_total_value). When the live landed-COGS export
+#   (b18aadfd) is wired, refresh these numbers here and re-mirror the prose table.
+#
+# HARD RULE (CLAUDE.md #4): never invent a COGS. A SKU with NO reviewed landed COGS is
+#   OMITTED from this file on purpose — a funding attempt then yields a `sku_not_in_catalog`
+#   refusal (D-05), which is the correct, surfaced behavior. It is NEVER given a guessed
+#   cogs. The inactive remnant group (ZK-4NDS-MNA9, OA-26MX-IHV0, 5G-ZW6Q-WOZG,
+#   9J-ASSK-BVKC, FO-SE3J-T74M) has no COGS and is therefore ABSENT here by the same rule.
+#
+# RECONCILIATION (D-04, 2026-06-21)
+#   Reconciled three SKU sources into this one file:
+#     - the SKU->ASIN->tier rollup (25 active ASINs, the tier authority)
+#     - the per-SKU landed COGS in the reviewed deep-dive / rebuild packets
+#     - engine/tests/fixtures/ca_catalog_skus.txt (22 export-observed SKUs)
+#   A SKU is included here ONLY if it has BOTH a tier (rollup) AND a reviewed landed COGS
+#   (deep-dive). Catalog SKUs lacking a reviewed COGS are intentionally omitted so they
+#   refuse on funding until a real landed cost is supplied. Final count: 16 SKUs.
+#
+# KEYED BY SKU. Migrating to Supabase later: each [sku."<SKU>"] becomes one `sku_master`
+#   row (sku, asin, tier) joined to its `cogs` row, marketplace = CA.
+
+[sku."T8-2W2X-INOK"]   # Baklava 400g — best converter, healthiest unit economics
+asin = "B0FXX3JVR5"
+tier = "HERO"
+cogs = 26.77
+
+[sku."18-116Z-1R77"]   # Baklava 180g — HERO velocity, thin margin
+asin = "B0FXX46ST8"
+tier = "HERO"
+cogs = 13.63
+
+[sku."EU-Z87B-ZRBZ"]   # Baklava 850g — top profit (current landed; new PI ~37.74 pending)
+asin = "B0FY6N6TRH"
+tier = "HERO"
+cogs = 29.06
+
+[sku."Y4-Y8EE-VEOD"]   # Barazek 400g — HERO, clears 30% floor
+asin = "B0FTM6Y263"
+tier = "HERO"
+cogs = 11.76
+
+[sku."09-AJOP-CS83"]   # Baklava 250g — HERO
+asin = "B0FY6PBYZS"
+tier = "HERO"
+cogs = 11.07
+
+[sku."GG-0DC1-SKHG"]   # Maamoul Date 350g — Holy Land family
+asin = "B0FTSQ8M46"
+tier = "MAINTAIN"
+cogs = 15.56
+
+[sku."KL-GDUL-HEA1"]   # Barazek 250g — best converter in catalog (13.3%), Holy Land family
+asin = "B0FTSNBX57"
+tier = "MAINTAIN"
+cogs = 10.86
+
+[sku."H8-PWJ0-3B1Y"]   # Maamoul — MAINTAIN
+asin = "B0FY6SX9RP"
+tier = "MAINTAIN"
+cogs = 12.45
+
+[sku."9Z-KUHZ-FU2I"]   # 400g (duplicate of T8-2W2X — retire/redirect candidate)
+asin = "B0FTSMTDGP"
+tier = "MAINTAIN"
+cogs = 26.63
+
+[sku."AN-9938-NXOT"]   # CUT, healthy margin
+asin = "B0FTM1JV7N"
+tier = "CUT"
+cogs = 13.49
+
+[sku."FX-M8MA-MMSA"]   # Baklava 180g (duplicate of 18-116Z — retire/redirect candidate)
+asin = "B0FTSM2HSJ"
+tier = "CUT"
+cogs = 13.49
+
+[sku."BU-6GOS-GW5Q"]   # Ghraybeh 250g — Holy Land family
+asin = "B0FXX2R3BD"
+tier = "CUT"
+cogs = 8.10
+
+[sku."26-JITG-E4FU"]   # Barazek 250g — CUT, high ROI
+asin = "B0FXXM1CK8"
+tier = "CUT"
+cogs = 5.53
+
+[sku."RL-KMFR-SEGS"]   # CUT, cheapest per-gram
+asin = "B0FT3PHRF6"
+tier = "CUT"
+cogs = 8.99
+
+[sku."3I-SHTN-9CKQ"]   # CUT
+asin = "B0FT3HN2XV"
+tier = "CUT"
+cogs = 7.61
+
+[sku."O3-V1B9-CH1H"]   # CUT
+asin = "B0FTMBSVDN"
+tier = "CUT"
+cogs = 9.48
