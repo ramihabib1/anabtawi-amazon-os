@@ -1,0 +1,10 @@
+{
+  "actionId": "ACT-PLACEHOLDER-ERROR-0001",
+  "type": "AMAZON_ADS_CAMPAIGNS_UPDATE",
+  "status": "ERROR",
+  "error": {
+    "status": "ERROR",
+    "code": "EXECUTION_FAILED",
+    "message": "The campaign update could not be applied because the campaign is archived. Restore the campaign before retrying."
+  }
+}

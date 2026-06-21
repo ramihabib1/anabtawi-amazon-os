@@ -1,0 +1,38 @@
+{
+  "campaigns": [
+    {
+      "campaignId": "CMP-1000000000001",
+      "name": "Anabtawi SP - Special Assorted 800g - Exact",
+      "adProduct": "SPONSORED_PRODUCTS",
+      "state": "ENABLED",
+      "budgets": [
+        { "budgetType": "DAILY", "budget": 40.0, "currencyCode": "CAD" }
+      ],
+      "optimizations": { "bidStrategy": "AUTO_FOR_SALES" },
+      "status": "DELIVERING"
+    },
+    {
+      "campaignId": "CMP-1000000000002",
+      "name": "Anabtawi SP - Baklava Assortment - Auto",
+      "adProduct": "SPONSORED_PRODUCTS",
+      "state": "ENABLED",
+      "budgets": [
+        { "budgetType": "DAILY", "budget": 25.0, "currencyCode": "CAD" }
+      ],
+      "optimizations": { "bidStrategy": "LEGACY_FOR_SALES" },
+      "status": "DELIVERING"
+    },
+    {
+      "campaignId": "CMP-1000000000003",
+      "name": "Anabtawi SP - Maamoul Dates - Broad",
+      "adProduct": "SPONSORED_PRODUCTS",
+      "state": "PAUSED",
+      "budgets": [
+        { "budgetType": "DAILY", "budget": 15.0, "currencyCode": "CAD" }
+      ],
+      "optimizations": { "bidStrategy": "MANUAL" },
+      "status": "PAUSED"
+    }
+  ],
+  "nextToken": null
+}
