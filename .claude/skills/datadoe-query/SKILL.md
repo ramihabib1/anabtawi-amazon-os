@@ -90,9 +90,21 @@ defaults to `engine/tests/fixtures/ca_catalog_skus.txt` (re-seed from the real c
 - Common ad columns: `ad_spend, ad_sales, ad_clicks, ad_impressions, ad_orders,
   ad_units_sold, ad_campaign_name, ad_campaign_status, ad_campaign_budget_amount`,
   plus new-to-brand metrics. SP sales are 7-day attribution; SB/SD are 14-day.
-- **To wire in next:** a campaign-level table (`amazon_ads_performance_by_campaign_by_date`)
-  and a **search-term / targeting** source for negative-keyword mining — discover with
-  `exports_sources_get("search term keyword targeting", [sellerId])`.
+- **Ad Performance by Campaign & Date** — `id: 08cdc77d3d` · `amazon_ads_performance_by_campaign_by_date`
+  (SP + SB + SD, per campaign). Prefer for campaign-level rollups; per-ASIN table only
+  when ASIN attribution is needed. (Verified 2026-06-11.)
+- **Search Term Performance** — `id: e94e967198` · `amazon_ads_search_terms_by_campaign_by_date`.
+  **The negative-keyword lever.** Per date: `ad_search_term` (what the shopper typed),
+  `ad_keyword`/`ad_targeting_text` (what you bid on), `ad_match_type, ad_campaign_name,
+  ad_group_name, ad_keyword_bid, ad_spend, ad_sales, ad_orders, ad_clicks, ad_impressions`.
+  SP + SB only (no SD). Backfill ~60d initial. (Verified 2026-06-11.)
+- **Keyword Targeting Performance** — `id: bbba3d213a` · `amazon_ads_targeting_by_campaign_by_date`.
+  Per advertised keyword/target: spend/sales/orders + `ad_top_of_search_impression_share`
+  and `ad_keyword_status`. Use for the bid sheet (per-keyword bid decisions). (Verified 2026-06-11.)
+- **Ad Campaigns (raw)** — `id: 90b696e336` · `amazon_ads_campaigns_raw`. Campaign config
+  snapshot: state, delivery status, start/end date, `ad_campaign_optimization_bid_strategy`,
+  placement bid adjustments (JSON), AUTO/MANUAL targeting, cost type. No date filter needed.
+  Use for campaign-structure audits (orphaned/paused campaigns, bid-strategy review). (Verified 2026-06-11.)
 
 ### Inventory
 - **FBA Inventory Health** — `id: 44fc5ba0ce` · `amazon_fba_inventory_health` (daily snapshot).
@@ -123,3 +135,56 @@ above so the next run doesn't rediscover them.
   ODR, policy/IP/food-safety violations, late-shipment — for the account-level audit.
 - **FBA Ledger** — `829e34f54e` / `6a6e14526d`. Lost/damaged/returned units & reconciliation
   (reimbursement recovery).
+
+## Write actions — the gated `actions_start` path (PPC writes only)
+
+DataDoe's data layer above is **read-only** — it is for analysis, never a write-back. The **only**
+write surface to Amazon is the gated `actions_start` path (CLAUDE.md hard rule 1: no autonomous
+writes; every change is a reviewed artifact → explicit approval → a gated write). M2 scope is
+**PPC writes only** (bids, budgets, states); catalog / restock / listing writes are deferred.
+
+**The four write-path tools:**
+- `actions_start(type, sellerOrVendorId, dryRun, details)` — stage an action. **ALWAYS `dryRun:true` first** (validate-only, makes **no** account change).
+- `actions_get(actionId)` — poll a started action to a terminal status.
+- `actions_list(...)` — enumerate prior actions (find a historical `actionId`).
+- `actions_details_schema_get(...)` — read the JSON schema for an action type (read-only).
+
+Action types use the **`AMAZON_ADS_`** prefix, one verb per call:
+`AMAZON_ADS_CAMPAIGNS_FIND` / `_UPDATE` / `_REMOVE` / `_ADD` (likewise `AD_GROUPS`, `TARGETS`, `ADS`).
+A `*_FIND` request carries **one ad-product** (`adProductFilter.include` `maxItems:1` —
+`SPONSORED_PRODUCTS` | `SPONSORED_BRANDS` | `SPONSORED_DISPLAY`).
+
+**1. FIND-before-write (WRITE-02).** Before any `_UPDATE`/`_REMOVE`, pull the live
+`campaignId/adGroupId/targetId/adId` via the matching `*_FIND` tool and cache the result to
+`data/ads_<entity>_<adProduct>_find_<date>.json` (`engine/src/habibos/find_cache.py` `write()`).
+A later write whose entity ID is **not** in the cache is **refused at build** (`lookup()` →
+`Refusal("stale/missing entity ID", "find_cache_miss")`) — never executed on a fabricated or stale ID.
+
+**2. dryRun discipline (WRITE-01).** Fire `actions_start dryRun:true` first and **PROCEED only**
+when `status == "VALIDATED"` **and** `validation.valid` is true **and** `validation.issues` is empty.
+Do **not** classify in chat — the engine owns the verdict:
+```
+cd engine && uv run python scripts/classify_dryrun.py --artifact <dryRun_response.json>   # → proceed / stop
+cd engine && uv run python scripts/classify_poll.py    --artifact <actions_get_response.json>  # → done / in_flight / refuse
+```
+The `ActionStartResponse` shape is `status` (top-level) + a **nested** `validation:{valid, issues}`
+object (see `engine/tests/fixtures/dryrun_validated.json` / `dryrun_invalid.json`).
+
+**3. Terminal-status enum (WRITE-05) — pinned verbatim** (matches `engine/src/habibos/datadoe.py`
+`ACTION_TERMINAL`; a wrong name spins an infinite poll):
+- **In-flight (keep polling):** `PENDING`, `IN_PROGRESS`, `WAITING_EXTERNAL_PROCESSING`
+- **Terminal success:** `COMPLETED`
+- **Terminal done-with-issues:** `PARTIALLY_COMPLETED`, `COMPLETED_WITH_ISSUES`
+- **Terminal failure:** `ERROR`, `CANCELED`, `BLOCKED_NO_TOKENS`, `BLOCKED_INVALID_INPUT`
+
+Note: there is **no** `FAILED` status, and `CANCELED` is spelled with **one L**. An unmodeled
+status is refused (treated as neither terminal nor safe-to-spin), not assumed terminal.
+
+**4. Reconcile via status, NEVER via export.** Confirm a write **only** by `actions_get` → a
+terminal status **plus** a `*_FIND` echo of the changed entity. **Never** confirm by a next-day
+DataDoe export — the analytics tables lag up to ~24h, so an export cannot confirm a just-applied write.
+
+**5. HTTP refusals the agent must NOT retry:**
+- `412` — action type **disabled** (org-enable it in DataDoe **Settings → Actions**; off by default). Do not retry; surface it.
+- `402` — no AI tokens. Do not retry; surface it.
+- `429` — rate limit (2 req/s). **Retryable** — honor `Retry-After`.
