@@ -180,7 +180,11 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
   3. A spend-increasing write (bid-up / budget-up / placement-up / new-campaign) passes only when its projected TACOS ≤ that SKU's ceiling; a spend-decreasing write (pause / negative / bid-down) always passes the gate (GATE-03).
   4. An over-ceiling bid/budget or sub-floor price is **refused** (a typed `GateRefusal` naming the breached number and its source), never silently clamped to the limit (GATE-04).
   5. The SKU→tier/contribution-margin table is machine-readable (a parseable per-SKU row the gate consumes directly); a SKU absent from the table yields a gate refusal on funding it — correct behavior, surfaced as such (GATE-05).
-**Plans**: TBD
+**Plans**: 4 plans (3 waves)
+- [ ] 07-01-PLAN.md — Wave 1: gate types in result.py (ProposedAction/GateRefusal/GateVerdict) + RED test_gate.py (GATE-01..05) + test_thresholds.py repoint (GATE-01..05)
+- [ ] 07-02-PLAN.md — Wave 1: sku_catalog.toml single source of truth + seed min_net_margin_pct=15 + edge fixtures + SKILL.md render note (GATE-02/05)
+- [ ] 07-03-PLAN.md — Wave 2: gate.py money core (pre-ad CM%, ceiling, projected TACOS, evaluate branch order) — turns the suite GREEN (GATE-01..05)
+- [ ] 07-04-PLAN.md — Wave 3: thin gate_action.py CLI (argv→evaluate→JSON, logged) + CLI smoke test (GATE-03/04/05)
 
 ### Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed
 **Goal**: The first real account writes land — but only reversible ones (pause campaign/keyword/ad, add negative keyword, lower a bid) under standing approval within a magnitude cap — each built, gated (auto-pass as spend-decreasing), dry-run'd, applied, polled to COMPLETED, reconciled, and logged idempotently. Applying this spine to the runbook stops the dead-SKU spend bleed (~$279/mo, ~43% of spend, ~$0 sales loss) and enforces the own-ASIN denylist. (Runbook Wave 1.)
