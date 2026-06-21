@@ -19,12 +19,18 @@
 #   (hero/maintain/cut), inventory weeks-of-cover, listing benchmarks, margin floors,
 #   read by the prose skills. THIS file is the MACHINE mirror the engine CLI enforces for
 #   the hard ad ceilings (acos/tacos) + waste trigger. Keep the ad ceilings here in sync
-#   with the "Advertising" section of targets.md. Tier-aware ceilings (hero 35 / maintain
-#   28 / cut 18) activate once the SKU->tier table in anabtawi-context is filled.
+#   with the "Advertising" section of targets.md.
+#
+# MARGIN GATE (D-01a): there is NO per-tier ceiling table. The margin-tiered safety gate
+#   is ONE floor (`min_net_margin_pct` below) plus the per-SKU formula
+#   `tacos_ceiling = contribution_margin% - min_net_margin_pct`, derived live from each
+#   SKU's own landed COGS in `engine/config/sku_catalog.toml`. A missing floor or a
+#   missing/zero COGS => typed refusal, never a default.
 
 [marketplace.CA]            # amazon.ca (CAD) — your only active marketplace today
-# Minimum acceptable net margin %, e.g. 20.0  (leave empty until you decide)
-min_margin_pct = ""
+# Minimum acceptable net margin % the gate protects (D-07/D-07a). The margin-tiered
+#   safety gate refuses any spend-increase that would push net margin below this floor.
+min_net_margin_pct = 15
 # ACOS ceiling % above which ad spend is flagged, e.g. 35.0
 # D-09: operator-adopted recommendation (30% conservative catalog-wide break-even-ACOS
 #   proxy for a food/sweets catalog). NOT a runtime-invented value — TUNE after the

@@ -1,0 +1,23 @@
+# Edge-case catalog fixture for the margin-gate refusal tests (Plan 01).
+#
+# Mirrors engine/config/sku_catalog.toml shape EXACTLY ([sku."<SKU>"] -> asin/tier/cogs)
+# so the gate's catalog parser is fixture-agnostic. Deliberately tiny + adversarial:
+#
+#   (a) EU-Z87B-ZRBZ  — present, valid non-zero cogs  -> happy-path / breach tests.
+#   (b) ZZ-ZERO-COGS0 — present, cogs = 0             -> drives the `no_margin` refusal.
+#   (c) a SKU the tests will try to fund is ABSENT    -> drives the `sku_not_in_catalog`
+#                                                        refusal (e.g. NX-NOTIN-CAT0,
+#                                                        never listed here on purpose).
+#
+# These values are TEST FIXTURES, not the live catalog — they exist to exercise the
+# refusal branches independently of engine/config/sku_catalog.toml.
+
+[sku."EU-Z87B-ZRBZ"]   # valid SKU, non-zero cogs — happy-path / ceiling-breach tests
+asin = "B0FY6N6TRH"
+tier = "HERO"
+cogs = 29.06
+
+[sku."ZZ-ZERO-COGS0"]  # cogs = 0 -> `no_margin` refusal (D-03/D-04: unreliable COGS)
+asin = "B0ZEROCOGS0"
+tier = "CUT"
+cogs = 0
