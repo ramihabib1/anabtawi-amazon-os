@@ -146,7 +146,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 
 ## Phases (M2)
 
-- [ ] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk
+- [x] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk (completed 2026-06-21)
 - [ ] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend)
 - [ ] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - First real writes land: pause / negative / bid-down under standing approval, idempotent, every action logged to `decisions.md` + `brain/raw/`; the dead-SKU spend bleed is stopped and the own-ASIN denylist enforced
 - [ ] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover
@@ -168,7 +168,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] 06-01-PLAN.md — Wave 0: pin the verified ACTION_* status enum + add Proceed/PollOutcome; write the RED test_lifecycle/test_find_cache + sanitized fixtures (WRITE-01/02/05)
 - [x] 06-02-PLAN.md — lifecycle.py classify_dryrun + classify_poll + the two thin logged_call CLIs (WRITE-01/05)
 - [x] 06-03-PLAN.md — find_cache.py write/lookup with missing→refuse, FIND-before-write enforced at build (WRITE-02)
-- [ ] 06-04-PLAN.md — datadoe-query SKILL write-action reference + live read-only actions_get/schema confirmation (SC-4)
+- [x] 06-04-PLAN.md — datadoe-query SKILL write-action reference + live read-only actions_get/schema confirmation (SC-4)
 
 ### Phase 7: Margin-Tiered Safety Gate
 **Goal**: The load-bearing safety guardrail exists, is hand-written and pytest-covered, and refuses before Amazon ever sees a spend-increasing write — each SKU's TACOS ceiling derived from its own contribution margin to hold net margin ≥ ~15%, refusing (never defaulting, never silently clamping) when a threshold, ceiling, or SKU margin is missing. This phase must pass the gate on nothing until the operator sets the real floor. (Runbook safety prerequisite; the gap flagged in execution-plan §A.5.)
@@ -222,7 +222,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. FIND + Lifecycle Substrate | 3/4 | In Progress|  |
+| 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 0/0 | Not started | - |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/0 | Not started | - |
 | 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
