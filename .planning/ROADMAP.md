@@ -196,7 +196,11 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
   3. Re-running the same approved action does not double-apply: a content-hash idempotency key (persisted in `data/actions_ledger.jsonl`) maps to its COMPLETED `actionId` and re-runs are a no-op; an in-flight `actionId` resumes at poll, never re-fires the start (WRITE-07).
   4. The stop-the-bleed batch is applied: remaining dead/exiting-SKU ad spend and mis-scoped keywords are paused, the negative-keyword harvest is applied per-campaign (exact-by-default, keep-positive allowlist protecting `baklava gift box`, "watch don't negate" terms bid-down not negated), and the EXCLUDE-own-ASIN denylist (B07TV972JT) refuses any payload targeting an owned ASIN before dryRun (EXEC-01).
   5. Standing approval is bounded by a magnitude cap (a bounded % change per action) so a "reversible" bid-down cannot kill a winner; phrase/broad negatives and over-cap cuts route to explicit review.
-**Plans**: TBD
+**Plans**: 4 plans (4 waves)
+- [ ] 08-01-PLAN.md — Wave 0: schema-pin recon (live actions_details_schema_get + dryRun fixtures) + result.py extension + RED test contracts (WRITE-03/06/07, EXEC-01)
+- [ ] 08-02-PLAN.md — Wave 1: ledger.py (content-hash idempotency) + denylist.py + owned_asins.toml + seeded-permissive magnitude cap + A2 staleness window (WRITE-07, EXEC-01)
+- [ ] 08-03-PLAN.md — Wave 2: apply.py spine + apply_action.py CLI + canary one-time confirm + decisions.md/brain log seam (WRITE-03/06/07, EXEC-01)
+- [ ] 08-04-PLAN.md — Wave 3: stop-the-bleed batch runbook + org-enable checkpoint + live canary acceptance (WRITE-03/06, EXEC-01)
 **UI hint**: no
 
 ### Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up
@@ -228,7 +232,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 |-------|----------------|--------|-----------|
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
-| 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/0 | Not started | - |
+| 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/4 | Planned | - |
 | 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
 
