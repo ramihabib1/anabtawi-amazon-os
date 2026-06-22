@@ -1,0 +1,36 @@
+{
+  "actionId": null,
+  "type": "AMAZON_ADS_TARGETS_ADD",
+  "status": "VALIDATED",
+  "dryRun": true,
+  "request": {
+    "type": "AMAZON_ADS_TARGETS_ADD",
+    "dryRun": true,
+    "details": {
+      "targets": [
+        {
+          "campaignId": "133745005582556",
+          "adGroupId": "17655380516167",
+          "adProduct": "SPONSORED_PRODUCTS",
+          "state": "ENABLED",
+          "negative": true,
+          "targetType": "KEYWORD",
+          "targetDetails": {
+            "keywordTarget": {
+              "keyword": "free samples",
+              "matchType": "EXACT"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "validation": {
+    "valid": true,
+    "issues": []
+  },
+  "result": null,
+  "error": null,
+  "cause": null,
+  "queuedAt": null
+}

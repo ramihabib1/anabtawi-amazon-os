@@ -2,7 +2,7 @@
 phase: 08-reversible-write-apply-spine-stop-the-bleed
 plan: 01
 subsystem: engine (apply-spine Wave-0 contracts)
-status: PARTIAL — blocked at Task 1 (checkpoint:human-action, blocking gate)
+status: COMPLETE — all 3 tasks done (Task 1 live-pinned by orchestrator MCP recon)
 tags: [write-spine, tdd-red, fixtures, idempotency, denylist, magnitude-cap, schema-pin]
 requires:
   - engine/src/habibos/result.py (ProposedAction, GateVerdict — extended in place)
@@ -20,6 +20,10 @@ tech-stack:
   patterns: [RED-on-import Wave-0 baseline, fixture-anchored assertions, typed-refusal grammar]
 key-files:
   created:
+    - engine/tests/fixtures/actions_start_dryrun_pause.json
+    - engine/tests/fixtures/actions_start_dryrun_negative.json
+    - engine/tests/fixtures/actions_start_dryrun_biddown.json
+    - .planning/phases/08-reversible-write-apply-spine-stop-the-bleed/08-SCHEMA-PIN.md
     - engine/tests/fixtures/actions_get_inflight.json
     - engine/tests/fixtures/campaigns_find_echo.json
     - engine/tests/fixtures/actions_ledger_seed.jsonl
@@ -39,13 +43,15 @@ metrics:
   completed: 2026-06-22
 ---
 
-# Phase 8 Plan 01: Pin Reversible-Write Schemas + Lay RED Contracts — Summary (PARTIAL)
+# Phase 8 Plan 01: Pin Reversible-Write Schemas + Lay RED Contracts — Summary (COMPLETE)
 
 ProposedAction extended with the apply-spine fields, AppliedResult added, four supporting
 fixtures captured, and the four RED Wave-0 test contracts (+ the A2 staleness extension) laid
-down. **Task 1 — the live schema pin — is BLOCKED on a human-action checkpoint** (the DataDoe
-MCP is not reachable this session); the three live dryRun fixtures and `08-SCHEMA-PIN.md` are
-NOT yet created and must NOT be fabricated.
+down. **Task 1 — the live schema pin — is COMPLETE.** The original executor lacked the DataDoe
+MCP tools; the orchestrator (which has them) ran the read-safe recon — three
+`actions_details_schema_get` reads + one read-only `TARGETS_FIND` + three `actions_start
+dryRun:true` validations (no live writes, no account changes) — and captured the three real
+VALIDATED payloads as sanitized fixtures plus `08-SCHEMA-PIN.md`. Nothing was fabricated.
 
 ## What Was Completed
 
@@ -85,31 +91,34 @@ NOT yet created and must NOT be fabricated.
 on the missing `write_bearing` kwarg; the two pre-existing `test_find_cache` tests stay GREEN;
 the Phase-7 gate contract (10 tests) stays GREEN. No seller UUID anywhere under `engine/tests/`.
 
-## Task 1 — BLOCKED (checkpoint:human-action, gate="blocking")
+## Task 1 — COMPLETE (live schema pin, read-safe MCP recon)
 
-Task 1 requires LIVE DataDoe MCP round-trips to pin the three reversible-action payload
-schemas (`actions_details_schema_get` + `actions_start dryRun:true` for pause / exact-match
-negative / bid-down), captured as the sanitized fixtures `actions_start_dryrun_pause.json`,
-`actions_start_dryrun_negative.json`, `actions_start_dryrun_biddown.json` plus `08-SCHEMA-PIN.md`.
+The three reversible-action payload schemas were pinned LIVE via the DataDoe MCP — read-only +
+`dryRun:true` only, **no live account writes**:
+- `actions_details_schema_get` for `AMAZON_ADS_CAMPAIGNS_UPDATE`, `AMAZON_ADS_TARGETS_ADD`,
+  `AMAZON_ADS_TARGETS_UPDATE` (read).
+- One read-only `AMAZON_ADS_TARGETS_FIND` (actionId `9c3e7cd0-…`, COMPLETED) for real
+  campaign/adGroup/target IDs and the live `targetDetails.keywordTarget` shape.
+- Three `actions_start dryRun:true` validations, each returning `status:"VALIDATED"`,
+  `validation.valid:true`, `validation.issues:[]` (the negative-add needed `state` added on the
+  second iteration — validator: "Target add action requires state").
 
-**Why blocked:** the DataDoe MCP (`actions_*` tools) is NOT in this session's toolset, and the
-connected `agentcentral` MCP reports Amazon Ads not connected for the CA scope. CLAUDE.md hard
-rule 4 and the plan's own `<action>` ("If the live MCP is unreachable this session, STOP and
-surface the blocker — do NOT fabricate field names; the whole phase depends on real schemas")
-forbid hand-authoring these. The three dryRun fixtures + `08-SCHEMA-PIN.md` are intentionally
-NOT created.
+Captured as three sanitized fixtures (`actions_start_dryrun_{pause,negative,biddown}.json`,
+seller UUID stripped) + `08-SCHEMA-PIN.md` (the field-name map source of truth).
 
-**Impact on downstream:** the RED test contracts (Task 3) reference
-`actions_start_dryrun_pause.json` by path but fail RED on the missing modules BEFORE reading
-it, so Plan 01's executable contract is complete. Plans 02–03 GREEN implementation of
-`build_payload` is the consumer that genuinely needs the pinned schema — it cannot proceed
-correctly until Task 1's live pin lands.
+**Pinned facts (resolve RESEARCH Pitfall 1/2, Assumptions A1–A3, Open Question 1):**
+- **PAUSE** = `AMAZON_ADS_CAMPAIGNS_UPDATE`, details `{campaigns:[{campaignId, state:"PAUSED"}]}`;
+  **no `adProduct`** (live validator rejects it on UPDATE — confirms SKILL line 174).
+- **NEGATIVE exact** = `AMAZON_ADS_TARGETS_ADD`, `negative:true` + `targetType:"KEYWORD"` +
+  `targetDetails.keywordTarget.matchType:"EXACT"`. **There is NO `NEGATIVE_EXACT` literal** —
+  negation is the `negative:true` flag, match-type is plain `"EXACT"` nested under
+  `keywordTarget`. `state` is REQUIRED on ADD. Attachment level = **AD_GROUP** (via `adGroupId`).
+- **BID-DOWN** = `AMAZON_ADS_TARGETS_UPDATE`, details `{targets:[{targetId, bid}]}`; the write
+  takes a **flat** `bid` number, but a FIND echoes bid as `{bid, currencyCode}` (read `.bid.bid`).
 
-**Resume signal:** in a session with the DataDoe MCP available (and the reversible Ads action
-types org-enabled, or at least `dryRun:true` reachable), run the three
-`actions_details_schema_get` + `actions_start dryRun:true` round-trips, write the three
-sanitized fixtures + `08-SCHEMA-PIN.md`, then re-run
-`python3 -c "import json,glob; [json.load(open(f)) for f in glob.glob('engine/tests/fixtures/actions_start_dryrun_*.json')]; print('OK')"`.
+**Downstream:** `08-SCHEMA-PIN.md` is the single source of truth `build_payload` (Plan 03) and
+the ledger normalized-params map (Plan 02) are written against. The RED contracts (Task 3) now
+have their fixture anchors present; they still fail RED on the missing modules (intended).
 
 ## Deviations from Plan
 
@@ -121,9 +130,12 @@ human-action checkpoint (live MCP unreachable), per the plan's explicit STOP ins
 None. No production module was stubbed — Task 3 is RED-only by design (TDD RED gate); the
 GREEN modules are Plans 02–03.
 
-## Self-Check: PASSED (for completed Tasks 2 & 3)
+## Self-Check: PASSED
 
-All Task-2/Task-3 created files exist on disk; both per-task commits (`09cf048`, `ab5ea2a`)
-are in the worktree branch history. Task 1's three live dryRun fixtures + `08-SCHEMA-PIN.md`
-are intentionally ABSENT (blocking human-action checkpoint — live MCP unreachable, must not be
-fabricated). The plan is therefore PARTIAL, not complete.
+All three tasks complete. Task-2/Task-3 commits (`09cf048`, `ab5ea2a`) plus the Task-1 schema
+pin are in the worktree branch history. Acceptance verified: the three `actions_start_dryrun_*`
+fixtures parse with `status:"VALIDATED"`/`valid:true`/`issues:[]`; the pause fixture contains
+no `adProduct`; no seller UUID anywhere under `engine/tests/fixtures/`; `08-SCHEMA-PIN.md`
+records the per-type field map incl. the negative match-type literal + ad-group attachment;
+the Phase-7 contract (10 tests) stays GREEN; the four Wave-0 test files fail RED on the missing
+`habibos.apply`/`ledger`/`denylist`/`magnitude` modules (intended pre-Wave-1/2 state).
