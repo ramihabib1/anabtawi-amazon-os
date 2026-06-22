@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: completed
-last_updated: "2026-06-21T14:53:13.135Z"
-last_activity: 2026-06-21 -- Phase 06 marked complete
+status: executing
+last_updated: "2026-06-22T10:23:26.788Z"
+last_activity: 2026-06-22 -- Phase 07 Plan 03 complete (gate.py money core, test_gate.py 7/7 GREEN)
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 8
-  completed_plans: 4
+  completed_plans: 7
   percent: 20
 ---
 
@@ -21,15 +21,15 @@ progress:
 
 - **Core value (M2):** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — turning reviewed PPC artifacts into real, approval-gated account changes via DataDoe `actions_start`, with the margin gate protecting net margin ≥ ~15% and zero autonomous spend-up.
 - **Milestone:** v2.0 — Execution Era (Gated PPC Write Path). PPC writes only; catalog refresh / restocks / listing writes deferred.
-- **Current focus:** Phase 06 — find-lifecycle-substrate
+- **Current focus:** Phase 07 — margin-tiered-safety-gate
 - **Project mode:** execution-layer on the M1 read-only engine (agent does MCP I/O; hand-written, pytest-covered Python owns the money truth)
 
 ## Current Position
 
-Phase: 06 — COMPLETE
-Plan: 1 of 4
-Status: Phase 06 complete
-Last activity: 2026-06-21 -- Phase 06 marked complete
+Phase: 07 (margin-tiered-safety-gate) — EXECUTING
+Plan: 4 of 4 (07-01, 07-02, 07-03 complete; 07-04 gate_action CLI remaining)
+Status: Executing Phase 07
+Last activity: 2026-06-22 -- Phase 07 Plan 03 complete (gate.py money core, test_gate.py 7/7 GREEN)
 
 ## Performance Metrics
 
@@ -76,8 +76,8 @@ None hard-blocking roadmap; three operator preconditions (min-margin floor, mach
 
 ## Session Continuity
 
-- **Last action:** Milestone v2.0 roadmap created from PROJECT/REQUIREMENTS/research + execution-plan runbook (2026-06-20). Phases 6–10 written, 21/21 requirements mapped, traceability filled.
-- **Next action:** `/gsd:execute-phase 6` (start Wave 1 = 06-01). Operator should also begin clearing Phase 7 preconditions (set `min_net_margin_pct`, machine-readable SKU→margin table).
+- **Last action:** Phase 07 Plan 03 executed — `engine/src/habibos/gate.py` implemented as the hand-written, pytest-covered margin-tiered safety money core (pre-ad CM% with ad_spend added back, per-SKU ceiling = CM% − min_net_margin_pct, worst-case projection, typed GateVerdict/GateRefusal refusing on every missing/over-ceiling input). `test_gate.py` 7/7 GREEN; full engine suite 33 passed / 5 skipped (pre-existing Supabase/context skips). Commit `183c1de`.
+- **Next action:** `/gsd:execute-phase 7` continues with 07-04 (gate_action CLI: argv → gate.evaluate inside logged_call → JSON stdout, mirroring answer_tacos.py). The gate money contract is now the Phase 7 truth layer.
 
 ---
 *State initialized: 2026-06-08 · Milestone v2.0 roadmap state set: 2026-06-20*

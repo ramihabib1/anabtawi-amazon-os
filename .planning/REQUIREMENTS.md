@@ -22,11 +22,11 @@ that protects net margin. PPC writes only; catalog refresh / restocks / listing 
 
 ### GATE — Margin-tiered safety gate (engine, hand-written + pytest-covered)
 
-- [ ] **GATE-01**: Engine computes each SKU's contribution margin from DataDoe window-summed components — typed, tested, never prose
-- [ ] **GATE-02**: Engine derives a per-SKU TACOS ceiling from that margin to protect a configured minimum net margin; a missing min-margin threshold yields a refusal, never a default
-- [ ] **GATE-03**: Spend-increasing writes must pass the gate (projected TACOS ≤ that SKU's ceiling); spend-decreasing writes (pause / negative / bid-down) always pass
-- [ ] **GATE-04**: The gate refuses (never silently clamps) an over-ceiling bid/budget or sub-floor price, returning a typed refusal naming the breached number and its source
-- [ ] **GATE-05**: The SKU→tier/contribution-margin table is machine-readable so the gate can consume it directly
+- [x] **GATE-01**: Engine computes each SKU's contribution margin from DataDoe window-summed components — typed, tested, never prose
+- [x] **GATE-02**: Engine derives a per-SKU TACOS ceiling from that margin to protect a configured minimum net margin; a missing min-margin threshold yields a refusal, never a default
+- [x] **GATE-03**: Spend-increasing writes must pass the gate (projected TACOS ≤ that SKU's ceiling); spend-decreasing writes (pause / negative / bid-down) always pass
+- [x] **GATE-04**: The gate refuses (never silently clamps) an over-ceiling bid/budget or sub-floor price, returning a typed refusal naming the breached number and its source
+- [x] **GATE-05**: The SKU→tier/contribution-margin table is machine-readable so the gate can consume it directly
 
 ### QUEUE — Daily action queue + approval spine
 
@@ -66,11 +66,11 @@ read-only substrate → margin gate (safety core) → reversible writes → rank
 | WRITE-01 | Phase 6 — FIND + Lifecycle Substrate | Pending |
 | WRITE-02 | Phase 6 — FIND + Lifecycle Substrate | Pending |
 | WRITE-05 | Phase 6 — FIND + Lifecycle Substrate | Pending |
-| GATE-01 | Phase 7 — Margin-Tiered Safety Gate | Pending |
-| GATE-02 | Phase 7 — Margin-Tiered Safety Gate | Pending |
-| GATE-03 | Phase 7 — Margin-Tiered Safety Gate | Pending |
-| GATE-04 | Phase 7 — Margin-Tiered Safety Gate | Pending |
-| GATE-05 | Phase 7 — Margin-Tiered Safety Gate | Pending |
+| GATE-01 | Phase 7 — Margin-Tiered Safety Gate | Complete |
+| GATE-02 | Phase 7 — Margin-Tiered Safety Gate | Complete |
+| GATE-03 | Phase 7 — Margin-Tiered Safety Gate | Complete |
+| GATE-04 | Phase 7 — Margin-Tiered Safety Gate | Complete |
+| GATE-05 | Phase 7 — Margin-Tiered Safety Gate | Complete |
 | WRITE-03 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
 | WRITE-06 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
 | WRITE-07 | Phase 8 — Reversible-Write Apply Spine + Stop-the-Bleed | Pending |
