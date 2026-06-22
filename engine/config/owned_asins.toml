@@ -1,0 +1,143 @@
+# Habib OS — OWNED-ASIN denylist: the dedicated authoritative source (D-06 / D-06a, EXEC-01).
+#
+# WHAT THIS IS
+#   The own-ASIN self-cannibalization guard (`denylist.py`) reads this file to refuse any
+#   reversible ad write whose TARGET is one of OUR OWN ASINs — advertising an Anabtawi
+#   product against our own page wastes spend and cannibalizes organic. A payload that
+#   targets an ASIN listed here is a HARD GateRefusal(own_asin_denied) BEFORE BUILD->DRYRUN
+#   (D-07) — never a warn-and-confirm.
+#
+# WHY A DEDICATED FILE (operator decision, 2026-06-22, RESEARCH Open Q4 / D-06a)
+#   The owned set is read from THIS dedicated file, NOT from engine/config/sku_catalog.toml.
+#   The two are deliberately DECOUPLED:
+#     - sku_catalog.toml  -> the 16 COGS-gated SKUs the MARGIN GATE funds (Phase 7). It is
+#                            intentionally narrow: only SKUs with a reviewed landed COGS.
+#     - owned_asins.toml  -> EVERY owned ASIN the denylist must refuse an ad from targeting.
+#                            This is BROADER than the COGS catalog (it includes owned ASINs
+#                            with no reviewed COGS, and the named private-label exclusion).
+#   Keeping them separate means Phase 7's COGS semantics stay clean while the denylist still
+#   covers the full owned surface.
+#
+# PROVENANCE (D-06a) — seeded from the AUTHORITATIVE SKU->ASIN table in
+#   .claude/skills/anabtawi-context/SKILL.md (lines 34-61, the SKU/ASIN/Tier authority)
+#   PLUS the named private-label exclusion B07TV972JT (the Alreef #1 assorted ASIN — owned,
+#   must be excluded from ALL SP/SB/SD targeting, per
+#   brain/raw/2026-06-17_baklava-rebuild-research.md).
+#
+# HARD RULE (CLAUDE.md #4): NEVER invent an ASIN. Every ASIN below is copied verbatim from
+#   the authoritative table above. The inactive remnant SKUs (ZK-4NDS-MNA9, OA-26MX-IHV0,
+#   5G-ZW6Q-WOZG, 9J-ASSK-BVKC, FO-SE3J-T74M) carry NO ASIN in that table and so contribute
+#   no row here — a missing ASIN is surfaced (it simply isn't denied), never guessed.
+#
+# COMPLETENESS NOTE (the documented gap, D-06a): this seeds the 25 ASINs that ARE
+#   authoritative in the SKU->ASIN table + B07TV972JT = 26 ASINs. If the full owned catalog
+#   later confirms additional ASINs (e.g. once the remnant SKUs are mapped), ADD them here —
+#   tightening the denylist is a config edit, not a code change.
+#
+# KEYED BY ASIN. Each [owned."<ASIN>"] row carries only public catalog metadata (brand /
+#   sku / product) — NEVER the seller UUID or any secret (hard rule 5, T-08-09). ASINs are
+#   public, so committing them is fine and keeps the denylist reviewable.
+
+[owned."B07TV972JT"]   # NAMED private-label exclusion (Alreef #1 assorted) — exclude from ALL targeting
+brand = "Anabtawi private label"
+product = "Alreef #1 Assorted (private-label exclusion)"
+
+[owned."B0FXX3JVR5"]   # T8-2W2X-INOK — Baklava 400g (canonical)
+brand = "Anabtawi"
+sku = "T8-2W2X-INOK"
+
+[owned."B0FXX46ST8"]   # 18-116Z-1R77 — Baklava 180g (canonical)
+brand = "Anabtawi"
+sku = "18-116Z-1R77"
+
+[owned."B0FTM6Y263"]   # Y4-Y8EE-VEOD — Barazek 400g
+brand = "Anabtawi"
+sku = "Y4-Y8EE-VEOD"
+
+[owned."B0FY6PBYZS"]   # 09-AJOP-CS83 — Assorted 250g
+brand = "Anabtawi"
+sku = "09-AJOP-CS83"
+
+[owned."B0FTSQ8M46"]   # GG-0DC1-SKHG — HL Maamoul Date 350g
+brand = "Anabtawi"
+sku = "GG-0DC1-SKHG"
+
+[owned."B0FY6N6TRH"]   # EU-Z87B-ZRBZ — Baklava 850g
+brand = "Anabtawi"
+sku = "EU-Z87B-ZRBZ"
+
+[owned."B0FTM92W43"]   # C5-TXQU-Y67R — Maamoul Walnut 550g
+brand = "Anabtawi"
+sku = "C5-TXQU-Y67R"
+
+[owned."B0FTM1JV7N"]   # AN-9938-NXOT — Maamoul Date 550g
+brand = "Anabtawi"
+sku = "AN-9938-NXOT"
+
+[owned."B0FTSNBX57"]   # KL-GDUL-HEA1 — HL Barazek 250g
+brand = "Anabtawi"
+sku = "KL-GDUL-HEA1"
+
+[owned."B0FXXN7HGB"]   # W3-UQRU-PGRR — B&W Baklava 350g
+brand = "Anabtawi"
+sku = "W3-UQRU-PGRR"
+
+[owned."B0GKWQJNYR"]   # YE-HCDW-4UYW — Assorted 800g (flagship)
+brand = "Anabtawi"
+sku = "YE-HCDW-4UYW"
+
+[owned."B0FXXQHDHP"]   # KP-MEL9-XYGW — Honey Nut Brittle 500g
+brand = "Anabtawi"
+sku = "KP-MEL9-XYGW"
+
+[owned."B0FY6SX9RP"]   # H8-PWJ0-3B1Y — Special Assorted 250g
+brand = "Anabtawi"
+sku = "H8-PWJ0-3B1Y"
+
+[owned."B0FY6MFJV5"]   # E3-DSPC-O2UN — Baklava 500g
+brand = "Anabtawi"
+sku = "E3-DSPC-O2UN"
+
+[owned."B0FY6M2LHX"]   # 1S-ITGB-CZFR — Special Assorted 500g
+brand = "Anabtawi"
+sku = "1S-ITGB-CZFR"
+
+[owned."B0FXXM1CK8"]   # 26-JITG-E4FU — Barazek 250g (dup)
+brand = "Anabtawi"
+sku = "26-JITG-E4FU"
+
+[owned."B0FXX2R3BD"]   # BU-6GOS-GW5Q — HL Ghraybeh 250g
+brand = "Anabtawi"
+sku = "BU-6GOS-GW5Q"
+
+[owned."B0FTMBSVDN"]   # O3-V1B9-CH1H — Ghraybeh Special 375g
+brand = "Anabtawi"
+sku = "O3-V1B9-CH1H"
+
+[owned."B0FT3PHRF6"]   # RL-KMFR-SEGS — Cashew Fingers 400g
+brand = "Anabtawi"
+sku = "RL-KMFR-SEGS"
+
+[owned."B0FT3HN2XV"]   # 3I-SHTN-9CKQ — Almond Fingers 375g
+brand = "Anabtawi"
+sku = "3I-SHTN-9CKQ"
+
+[owned."B0FXX2QVF8"]   # 0C-45D7-6JUB — Assorted Cookies 725g
+brand = "Anabtawi"
+sku = "0C-45D7-6JUB"
+
+[owned."B0FSL5KQ9Q"]   # ASW-H50 — Honey Baklava 500g
+brand = "Anabtawi"
+sku = "ASW-H50"
+
+[owned."B0FTSM2HSJ"]   # FX-M8MA-MMSA — Baklava 180g DUP
+brand = "Anabtawi"
+sku = "FX-M8MA-MMSA"
+
+[owned."B0FTSMTDGP"]   # 9Z-KUHZ-FU2I — Baklava 400g DUP
+brand = "Anabtawi"
+sku = "9Z-KUHZ-FU2I"
+
+[owned."B0FTM5PBZW"]   # VH-ZTOC-GW1Q — Maamoul Pistachio 550g
+brand = "Anabtawi"
+sku = "VH-ZTOC-GW1Q"

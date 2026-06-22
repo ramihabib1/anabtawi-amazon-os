@@ -45,3 +45,11 @@ days_of_cover_floor = ""
 # Spend with zero attributed orders that triggers a "wasted spend" flag (CAD), e.g. 5.00
 # Mirrors targets.md `waste_flag_min_spend: 10` (low-volume catalog -> low bar).
 zero_conversion_spend_trigger = 10
+# Reversible-write magnitude cap: the max bounded-% change a single reversible apply may make
+#   (e.g. a bid-down's % vs the prior bid). EMPTY ("") = PERMISSIVE — the cap passes at ANY
+#   magnitude (D-01/D-02 seeded permissive; a reversible move can be undone, so this is a
+#   future tightening dial, not a launch guard). Unlike the margin floor above, an EMPTY
+#   value here means PASS, not refuse (the documented asymmetry — see magnitude.py). To start
+#   capping reversible moves, set a number (e.g. 50 = refuse any move over 50%); the cap then
+#   REFUSES an over-cap move (never clamps). Tightening is a config edit, not a code change.
+max_reversible_pct_change = ""
