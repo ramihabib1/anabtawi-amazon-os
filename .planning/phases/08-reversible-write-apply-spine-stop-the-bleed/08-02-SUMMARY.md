@@ -124,6 +124,10 @@ None - plan executed exactly as written. The three modules, the dedicated config
 - **Plan 08-03 (apply spine) is unblocked:** `ledger.lookup`/`append`, `denylist.check`, `magnitude.check`, and `find_cache.lookup(..., write_bearing=True)` are the pre-dryRun gates the apply orchestrator wires in sequence. `test_apply.py` (Plan 03) stays RED on the missing `habibos.apply` module — that is the intended Wave-2 state.
 - **No live writes performed.** This plan built local Python + config and ran pytest only.
 
+## Self-Check: PASSED
+
+All 7 created/modified files verified present; all 4 commits (92f9bef, 196d6f9, 9b3ed88, 47ac83b) verified in git log.
+
 ---
 *Phase: 08-reversible-write-apply-spine-stop-the-bleed*
 *Completed: 2026-06-22*
