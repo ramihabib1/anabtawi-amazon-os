@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: completed
-last_updated: "2026-06-22T18:13:21.635Z"
-last_activity: 2026-06-22 -- Phase 07 marked complete
+status: executing
+last_updated: "2026-06-22T18:38:25.303Z"
+last_activity: 2026-06-22 -- Phase 08 execution started
 progress:
   total_phases: 5
   completed_phases: 2
@@ -21,15 +21,15 @@ progress:
 
 - **Core value (M2):** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — turning reviewed PPC artifacts into real, approval-gated account changes via DataDoe `actions_start`, with the margin gate protecting net margin ≥ ~15% and zero autonomous spend-up.
 - **Milestone:** v2.0 — Execution Era (Gated PPC Write Path). PPC writes only; catalog refresh / restocks / listing writes deferred.
-- **Current focus:** Phase 07 — margin-tiered-safety-gate
+- **Current focus:** Phase 08 — reversible-write-apply-spine-stop-the-bleed
 - **Project mode:** execution-layer on the M1 read-only engine (agent does MCP I/O; hand-written, pytest-covered Python owns the money truth)
 
 ## Current Position
 
-Phase: 07 — COMPLETE
-Plan: 4 of 4 complete (07-01, 07-02, 07-03, 07-04 all done)
-Status: Phase 07 complete
-Last activity: 2026-06-22 -- Phase 07 marked complete
+Phase: 08 (reversible-write-apply-spine-stop-the-bleed) — EXECUTING
+Plan: 1 of 4
+Status: Executing Phase 08
+Last activity: 2026-06-22 -- Phase 08 execution started
 
 ## Performance Metrics
 
