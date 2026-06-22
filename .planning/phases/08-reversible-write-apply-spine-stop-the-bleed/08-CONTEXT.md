@@ -55,10 +55,20 @@ QUEUE-04); new-campaign chains + portfolios + the graveyard `CAMPAIGNS_REMOVE` (
   re-accrue spend.
 
 ### Own-ASIN denylist (Q3, EXEC-01 / SC-4)
-- **D-06:** The denylist covers the **full set of ~30 owned ASINs**, read from the
-  machine-readable **`engine/config/sku_catalog.toml`** (single source of truth, mirrors 07
-  D-04). **B07TV972JT is one row in that set, not a special case.** Any payload that points an
+- **D-06:** The denylist covers the **full set of ~30 owned ASINs**. Any payload that points an
   ad at an owned ASIN is refused — never deliberate to advertise our own product on our own page.
+  **B07TV972JT is one row in that set, not a special case.**
+- **D-06a (REVISED 2026-06-22 — operator decision during plan-phase; supersedes D-06's source):**
+  The denylist reads its owned-ASIN set from a **dedicated `engine/config/owned_asins.toml`**,
+  **NOT** from `sku_catalog.toml`. Rationale (research Open Question 4): `sku_catalog.toml` holds
+  only the ~16 COGS-gated SKUs the *margin gate* funds and **B07TV972JT is absent** from it; the
+  denylist must cover the broader ~30-ASIN owned set and must stay **decoupled from the gate's
+  COGS catalog** so Phase 7's "absent SKU → refuse funding" semantics are not polluted by
+  denylist-only rows that carry no margin data. The dedicated source is populated from the
+  authoritative owned-ASIN list (`anabtawi-context` SKU/ASIN table + B07TV972JT from
+  `brain/raw/2026-06-17_baklava-rebuild-research.md`); ASINs are **never invented** — seed what
+  is authoritative and document any gap. Rami selected "Separate denylist source" when this
+  16-vs-30 conflict was surfaced at plan time.
 - **D-07:** Denylist enforcement sits in Python **before BUILD→DRYRUN** (another pre-dryRun
   refuse-gate beside the margin gate), is a **hard refusal** (not warn-and-confirm), and uses
   the existing typed-refusal grammar surfaced verbatim — never silently dropped.
