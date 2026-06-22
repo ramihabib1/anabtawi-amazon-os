@@ -1,0 +1,16 @@
+{
+  "campaigns": [
+    {
+      "campaignId": "CMP-1000000000003",
+      "name": "Anabtawi SP - Maamoul Dates - Broad",
+      "adProduct": "SPONSORED_PRODUCTS",
+      "state": "PAUSED",
+      "budgets": [
+        { "budgetType": "DAILY", "budget": 15.0, "currencyCode": "CAD" }
+      ],
+      "optimizations": { "bidStrategy": "MANUAL" },
+      "status": "PAUSED"
+    }
+  ],
+  "nextToken": null
+}
