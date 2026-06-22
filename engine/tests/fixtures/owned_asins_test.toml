@@ -1,0 +1,28 @@
+# Owned-ASIN denylist fixture for the EXEC-01 denylist tests (Plan 02 GREEN target).
+#
+# Mirrors the DEDICATED engine/config/owned_asins.toml shape (D-06a, 2026-06-22 operator
+# decision) — NOT engine/config/sku_catalog.toml. The denylist owned set is read from this
+# dedicated source so it can cover the broader ~30-ASIN owned set (B07TV972JT included)
+# WITHOUT polluting the margin gate's 16-row COGS catalog. The two sources are decoupled:
+#   - sku_catalog.toml  -> the COGS-gated SKUs the margin gate funds (Phase 7).
+#   - owned_asins.toml   -> every owned ASIN the denylist refuses an ad from targeting.
+#
+# This is a TEST FIXTURE — three deliberately-chosen owned ASINs, NOT the live owned set:
+#   (a) B07TV972JT  — the named private-label exclusion (STATE.md binding EXCLUDE rule);
+#                     deliberately present here AND deliberately ABSENT from sku_catalog_test.toml,
+#                     so test_owned_set_from_dedicated_source proves the denylist reads THIS file
+#                     and not the COGS catalog.
+#   (b) B0FY6N6TRH  — an owned ASIN that also has a COGS row (overlap is allowed).
+#   (c) B0FXX3JVR5  — another owned ASIN with no COGS row (denylist superset of the catalog).
+#
+# ASINs are NEVER invented — these are sanitized stand-ins for the test contract; the live
+# owned_asins.toml (Plan 02) is seeded from the authoritative anabtawi-context ASIN table.
+
+[owned."B07TV972JT"]   # the named private-label exclusion; absent from the COGS catalog on purpose
+brand = "Anabtawi private label"
+
+[owned."B0FY6N6TRH"]   # owned ASIN that ALSO appears in sku_catalog (overlap allowed)
+brand = "Anabtawi"
+
+[owned."B0FXX3JVR5"]   # owned ASIN with no COGS row — the denylist is a superset of the catalog
+brand = "Anabtawi"

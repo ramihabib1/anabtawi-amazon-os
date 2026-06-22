@@ -1,0 +1,26 @@
+{
+  "actionId": null,
+  "type": "AMAZON_ADS_TARGETS_UPDATE",
+  "status": "VALIDATED",
+  "dryRun": true,
+  "request": {
+    "type": "AMAZON_ADS_TARGETS_UPDATE",
+    "dryRun": true,
+    "details": {
+      "targets": [
+        {
+          "targetId": "151307822903697",
+          "bid": 0.25
+        }
+      ]
+    }
+  },
+  "validation": {
+    "valid": true,
+    "issues": []
+  },
+  "result": null,
+  "error": null,
+  "cause": null,
+  "queuedAt": null
+}
