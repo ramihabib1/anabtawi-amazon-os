@@ -62,3 +62,29 @@ def test_uncached_id_refuses(cache_dir: Path) -> None:
     assert isinstance(miss, Refusal)
     assert miss.code == "find_cache_miss"
     assert "stale" in miss.reason or "missing" in miss.reason
+
+
+def test_stale_cache_refused(cache_dir: Path) -> None:
+    """A2 (Phase-8 staleness window, Wave-0 RED): a cache file older than the staleness window
+    is REJECTED for a WRITE-BEARING lookup -> Refusal(code="stale_find_cache").
+
+    Plan 02 adds the staleness dial (RESEARCH Pitfall 3 / Assumption A2): a reversible write
+    wants a FRESH FIND, so a days-old `ads_*_find_<old>.json` must NOT satisfy a write-bearing
+    lookup (it could shadow a since-changed entity). This test pins that contract. It FAILS
+    RED today because `lookup` has no `write_bearing` parameter yet — the intended Wave-0 state
+    (the dial is implemented in Plan 02, not here). It writes a cache file with an OLD date tail
+    by hand (find_cache.write always stamps today), then asserts a write-bearing lookup refuses.
+    """
+    result = _campaigns_find()
+    cached_id = result["campaigns"][0]["campaignId"]
+
+    # Hand-write a cache file dated well outside any sane 24h window (the date is the filename
+    # tail find_cache.lookup sorts on). find_cache.write would stamp today, so we forge the name.
+    stale_name = "ads_campaigns_sponsored_products_find_2020-01-01.json"
+    (cache_dir / stale_name).write_text(json.dumps(result), encoding="utf-8")
+
+    stale = find_cache.lookup(
+        "campaigns", "SPONSORED_PRODUCTS", cached_id, write_bearing=True
+    )
+    assert isinstance(stale, Refusal)
+    assert stale.code == "stale_find_cache"
