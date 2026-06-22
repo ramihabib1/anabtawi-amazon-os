@@ -147,7 +147,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 ## Phases (M2)
 
 - [x] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk (completed 2026-06-21)
-- [ ] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend)
+- [x] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend) (completed 2026-06-22)
 - [ ] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - First real writes land: pause / negative / bid-down under standing approval, idempotent, every action logged to `decisions.md` + `brain/raw/`; the dead-SKU spend bleed is stopped and the own-ASIN denylist enforced
 - [ ] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover
 - [ ] **Phase 10: New Coverage-Gap Campaigns + Archive Hygiene** - The lowest-reversibility moves run last: chained new-campaign builds (paced to in-stock inventory, with partial-build rollback), then the graveyard `CAMPAIGNS_REMOVE` archive in its own separately-approved final batch
@@ -184,7 +184,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] 07-01-PLAN.md — Wave 1: gate types in result.py (ProposedAction/GateRefusal/GateVerdict) + RED test_gate.py (GATE-01..05) + test_thresholds.py repoint (GATE-01..05)
 - [x] 07-02-PLAN.md — Wave 1: sku_catalog.toml single source of truth + seed min_net_margin_pct=15 + edge fixtures + SKILL.md render note (GATE-02/05)
 - [x] 07-03-PLAN.md — Wave 2: gate.py money core (pre-ad CM%, ceiling, projected TACOS, evaluate branch order) — turns the suite GREEN (GATE-01..05)
-- [ ] 07-04-PLAN.md — Wave 3: thin gate_action.py CLI (argv→evaluate→JSON, logged) + CLI smoke test (GATE-03/04/05)
+- [x] 07-04-PLAN.md — Wave 3: thin gate_action.py CLI (argv→evaluate→JSON, logged) + CLI smoke test (GATE-03/04/05)
 
 ### Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed
 **Goal**: The first real account writes land — but only reversible ones (pause campaign/keyword/ad, add negative keyword, lower a bid) under standing approval within a magnitude cap — each built, gated (auto-pass as spend-decreasing), dry-run'd, applied, polled to COMPLETED, reconciled, and logged idempotently. Applying this spine to the runbook stops the dead-SKU spend bleed (~$279/mo, ~43% of spend, ~$0 sales loss) and enforces the own-ASIN denylist. (Runbook Wave 1.)
@@ -227,7 +227,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
-| 7. Margin-Tiered Safety Gate | 3/4 | In Progress|  |
+| 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 0/0 | Not started | - |
 | 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
