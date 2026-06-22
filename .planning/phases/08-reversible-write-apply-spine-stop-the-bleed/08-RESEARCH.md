@@ -452,7 +452,7 @@ YYYY-MM-DD | area | SKU/campaign | change | rationale | expected impact | result
 | WRITE-07 | hash is identity over entity+action+params, NOT date | unit | `pytest tests/test_ledger.py::test_hash_excludes_date -x` | ❌ Wave 0 |
 | EXEC-01 | own-ASIN payload → hard GateRefusal(own_asin_denied) pre-dryRun | unit | `pytest tests/test_denylist.py::test_own_asin_refused -x` | ❌ Wave 0 |
 | EXEC-01 | a pause (no target ASIN) passes the denylist cleanly | unit | `pytest tests/test_denylist.py::test_pause_passes_denylist -x` | ❌ Wave 0 |
-| EXEC-01 | denylist reads owned ASINs from sku_catalog.toml | unit | `pytest tests/test_denylist.py::test_owned_set_from_catalog -x` | ❌ Wave 0 |
+| EXEC-01 | denylist reads owned ASINs from the dedicated owned_asins.toml (D-06a) | unit | `pytest tests/test_denylist.py::test_owned_set_from_dedicated_source -x` | ❌ Wave 0 |
 | SC-5 (D-02) | magnitude-cap mechanism exists + refuses over-cap when cap is set | unit | `pytest tests/test_apply.py::test_magnitude_cap_refuses_when_set -x` | ❌ Wave 0 |
 | SC-5 (D-02) | seeded permissive: reversible passes the cap at any magnitude | unit | `pytest tests/test_apply.py::test_magnitude_cap_seeded_permissive -x` | ❌ Wave 0 |
 | WRITE-03 | canary one-time confirm gates the first apply, then auto | unit | `pytest tests/test_apply.py::test_canary_one_time_confirm -x` | ❌ Wave 0 |
@@ -523,10 +523,10 @@ YYYY-MM-DD | area | SKU/campaign | change | rationale | expected impact | result
    - Known: the gate auto-passes any `delta_spend <= 0`. A pause/negative is spend-decreasing.
    - Recommendation: the spine sets `delta_spend = 0` (or a negative estimate) for pause/negative so `is_spend_increasing` is False and the gate auto-passes. Bid-down likewise ≤ 0. Document that the spine, not the operator, sets the sign for reversible actions.
 
-4. **B07TV972JT is not in `sku_catalog.toml`.**
+4. **B07TV972JT is not in `sku_catalog.toml`. (RESOLVED 2026-06-22 → D-06a: dedicated owned_asins.toml)**
    - Known: D-06 says "B07TV972JT is one row in that set, not a special case" — but the file's 16 owned ASINs do NOT include B07TV972JT.
    - Unclear: is B07TV972JT an owned ASIN that should be ADDED to `sku_catalog.toml`, or is the denylist's owned set a *superset* (all ~30 owned ASINs, some without COGS) sourced differently?
-   - Recommendation: the planner should confirm with Rami whether B07TV972JT (and the full ~30-ASIN owned set) belongs in `sku_catalog.toml` or in a dedicated `owned_asins` list. D-06 says "full set of ~30 owned ASINs" but the catalog has 16 (COGS-gated). **The denylist owned-set source may need to be broader than the gate's catalog** — flag for discuss/plan. This is the single most important pre-plan clarification.
+   - **Resolution (D-06a, 2026-06-22 operator decision):** the denylist owned set is read from a **dedicated `engine/config/owned_asins.toml`**, NOT from `sku_catalog.toml`. Rationale: `sku_catalog.toml` holds only the ~16 COGS-gated SKUs the margin gate funds and B07TV972JT is absent from it; the denylist must cover the broader ~30-ASIN owned set and stay decoupled from the gate's COGS catalog so Phase 7's "absent SKU → refuse funding" semantics are not polluted by denylist-only rows. The dedicated source is seeded from the authoritative owned-ASIN list (`anabtawi-context` SKU/ASIN table + B07TV972JT); ASINs are never invented. The test is `test_owned_set_from_dedicated_source` (owned set read from `owned_asins.toml`, NOT `sku_catalog.toml` COGS rows).
 
 5. **Dead-SKU campaign identity (2 of 4 SKUs absent from catalog).**
    - Resolved by Pitfall 5: the batch pauses *campaigns* found via live FIND, not SKUs via catalog. The plan must route campaign identity through FIND + the runbook (`brain/raw/2026-06-16`, `decisions.md` 2026-06-17), never through `sku_catalog.toml`.
