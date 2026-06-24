@@ -125,12 +125,80 @@ def test_apply_mode_without_approve_refuses(monkeypatch, capsys) -> None:
 
 
 def test_apply_mode_with_approve_applies(monkeypatch, capsys) -> None:
-    """A spend-up in apply mode WITH --approve AND a margin frame runs apply.apply.
+    """A spend-up in apply mode WITH --approve that clears the FULL gate chain runs apply.apply.
 
-    The --artifact (the premium window-sum export) is REQUIRED: a spend-up reaching the write
-    path with no margin frame must refuse no_margin (CR-04), so an applying spend-up test must
-    hand the gate a real frame to clear. EU-Z87B-ZRBZ's window (CM ~36%, ceiling ~21%) clears a
-    +21 CAD budget-up (projected TACOS ~7.7% < 21%), so the gate passes and the write applies.
+    The write path runs the SAME read-only chain render mode runs (CR-01): margin gate
+    (--artifact) -> cover/conversion (--cover) -> matured-window -> internal-competition. So an
+    applying spend-up must clear ALL of them, not just the margin gate. EU-Z87B-ZRBZ's window
+    (CM ~36%, ceiling ~21%) clears a +21 CAD budget-up (projected TACOS ~7.7% < 21%), and its
+    cover-map entry (cover 60 >= 42, conversion 25% >= 12%, days_of_data 30 matured) clears the
+    cover/conversion + matured-window gates, so the write applies.
+    """
+    calls = _spy(monkeypatch)
+    rc = queue_run.main(
+        [
+            "apply",
+            "--approve",
+            "--sku", "EU-Z87B-ZRBZ",
+            "--action-type", "budget_up",
+            "--delta-spend", "21.0",
+            "--entity-type", "campaigns",
+            "--entity-id", "CMP-1000000000003",
+            "--artifact", PROFIT,
+            "--cover", COVER,
+            "--dryrun-resp", DRYRUN,
+            "--apply-resp", APPLYR,
+            "--status-resp", STATUS,
+            "--find-echo", FINDE,
+        ]
+    )
+    assert rc == 0
+    assert len(calls) == 1
+    assert calls[0].action_type == "budget_up"
+    out = capsys.readouterr().out
+    payload = json.loads(out.strip().splitlines()[-1])
+    assert payload["action_id"] == "ACT-TEST-0001"
+    assert payload["status"] == "COMPLETED"
+
+
+def test_apply_mode_runs_cover_gate_before_write(monkeypatch, capsys) -> None:
+    """The write path runs the cover/conversion gate, refusing GG-0DC1 (1 FBA unit) (CR-01).
+
+    EXEC-05: GG-0DC1-SKHG at ~1 FBA unit (cover 2d, far below the 42-day floor) must be REFUSED
+    cover_below_floor on the path that fires a real write — apply.apply alone never runs the
+    cover gate, so before CR-01 this over-sell-into-stockout raise could fire. apply.apply must
+    NOT be called (the write never starts).
+    """
+    calls = _spy(monkeypatch)
+    rc = queue_run.main(
+        [
+            "apply",
+            "--approve",
+            "--sku", "GG-0DC1-SKHG",
+            "--action-type", "bid_up",
+            "--delta-spend", "7.0",
+            "--entity-type", "targets",
+            "--entity-id", "TGT-1000000000007",
+            "--artifact", PROFIT,
+            "--cover", COVER,
+            "--dryrun-resp", DRYRUN,
+            "--apply-resp", APPLYR,
+            "--status-resp", STATUS,
+            "--find-echo", FINDE,
+        ]
+    )
+    assert rc == 0
+    assert calls == []  # the real write never fired — the cover gate refused first
+    out = capsys.readouterr().out
+    payload = json.loads(out.strip().splitlines()[-1])
+    assert payload["code"] == "cover_below_floor"
+
+
+def test_apply_mode_spend_up_refuses_no_cover_data_on_write_path(monkeypatch, capsys) -> None:
+    """A spend-up with NO --cover refuses no_cover_data on the write path, never sails past (CR-01).
+
+    Unlike render mode (advisory; skips a gate whose input is absent), the write path requires
+    the EXEC-05 cover guardrail to have run — a missing live read REFUSES, never silently skips.
     """
     calls = _spy(monkeypatch)
     rc = queue_run.main(
@@ -150,12 +218,10 @@ def test_apply_mode_with_approve_applies(monkeypatch, capsys) -> None:
         ]
     )
     assert rc == 0
-    assert len(calls) == 1
-    assert calls[0].action_type == "budget_up"
+    assert calls == []  # no cover data -> refuse before the write fires
     out = capsys.readouterr().out
     payload = json.loads(out.strip().splitlines()[-1])
-    assert payload["action_id"] == "ACT-TEST-0001"
-    assert payload["status"] == "COMPLETED"
+    assert payload["code"] == "no_cover_data"
 
 
 def test_apply_mode_spend_up_without_artifact_refuses_no_margin(monkeypatch, capsys) -> None:

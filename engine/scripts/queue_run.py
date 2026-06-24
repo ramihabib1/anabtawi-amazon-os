@@ -69,13 +69,23 @@ def _spend_up_refusal(
     cover_map: dict,
     term_acos_map: dict,
     marketplace: str,
+    write_path: bool = False,
 ) -> GateRefusal | None:
     """Run the READ-ONLY gate chain for one spend-up candidate; return the FIRST refusal or None.
 
     Mirrors the spine's branch order: margin gate -> cover/conversion -> matured window ->
-    internal competition. Each gate is skipped only when its agent-supplied input is absent
-    (so a partial daily run still surfaces the gates it CAN evaluate); a present input that
-    refuses short-circuits. This computes nothing — every decision is a pytest-covered module.
+    internal competition. A present input that refuses short-circuits; this computes nothing —
+    every decision is a pytest-covered module.
+
+    INPUT-ABSENCE policy depends on WHICH path calls this (CR-01):
+      - render path (write_path=False): a gate whose agent-supplied input is absent is SKIPPED,
+        so a partial daily run still surfaces the gates it CAN evaluate (the table is advisory).
+      - write path (write_path=True): the cover/conversion gate REFUSES (no_cover_data) when the
+        live read is absent rather than skipping — a spend-up that fires a REAL account write
+        must have cleared the EXEC-05 cover guardrail, never sailed past it on missing data
+        (CLAUDE.md hard rule 4 — never assume cover; the guardrail must run on the path that
+        actually writes). cover_gate.check already refuses no_cover_data on a None live read, so
+        we hand it an empty live ({}) when the SKU is absent from the cover map.
     """
     sku = candidate["sku"]
     # UNIT MATCH (CR-02): gate.projected_tacos_pct adds delta_spend to a WINDOW ad_spend_sum
@@ -107,8 +117,12 @@ def _spend_up_refusal(
         if isinstance(verdict, GateRefusal):
             return verdict
 
-    # 2. Cover / conversion gate (Plan 02) — sub-cover or sub-conversion SKUs refuse.
+    # 2. Cover / conversion gate (Plan 02) — sub-cover or sub-conversion SKUs refuse. On the
+    #    write path a missing live read is NOT skipped: pass an empty live ({}) so cover_gate
+    #    refuses no_cover_data (the EXEC-05 guardrail must run before a real write, CR-01).
     live = cover_map.get(sku)
+    if live is None and write_path:
+        live = {}
     if live is not None:
         refusal = cover_gate.check(
             action,
@@ -140,6 +154,28 @@ def _spend_up_refusal(
             return refusal
 
     return None
+
+
+def _candidate_from_args(args) -> dict:
+    """Build the gate-chain candidate dict from the apply-mode CLI args (CR-01).
+
+    Lets _apply_mode reuse the SAME read-only gate chain render mode runs. The operator's
+    --delta-spend is ALREADY the window CAD delta the margin gate (and apply.apply) act on, so
+    we carry it as delta_spend_weekly with window_days=7 — the weekly->window scale in
+    _spend_up_refusal (* window_days/7) is then a no-op and the margin gate here sees the EXACT
+    same delta apply.apply will, never a doubly-scaled figure. The `entity` keys the
+    internal-competition gate's term lookup (mirrors the render candidate's `entity`).
+    """
+    return {
+        "sku": args.sku,
+        "action_type": args.action_type,
+        "delta_spend_weekly": args.delta_spend,
+        "window_days": 7,
+        "entity": args.entity_id,
+        "entity_type": args.entity_type,
+        "entity_id": args.entity_id,
+        "params": json.loads(args.params),
+    }
 
 
 def _auto_apply(candidate: dict, args, marketplace: str):
@@ -277,6 +313,31 @@ def _apply_mode(args) -> int:
         json.dump(dataclasses.asdict(refusal), sys.stdout)
         sys.stdout.write("\n")
         return 0
+
+    # FULL GATE CHAIN ON THE WRITE PATH (CR-01): apply.apply runs ONLY the margin gate, the
+    # denylist, and the magnitude cap — it never runs the cover/conversion, matured-window, or
+    # internal-competition gates. So the chain that decides a spend-up is ACTIONABLE (render
+    # mode) and the chain that EXECUTES it (here) were different chains, and the EXEC-05 cover
+    # guardrail (stop GG-0DC1 at 1 FBA unit) never ran on the path that actually fires a write.
+    # Run the SAME read-only chain render mode runs, refusing on the FIRST GateRefusal, BEFORE
+    # apply.apply. write_path=True makes the cover gate refuse no_cover_data on a missing live
+    # read rather than skip — a real write must clear the guardrail, never sail past it.
+    if action.is_spend_increasing:
+        cover_map = _load(args.cover) if args.cover else {}
+        term_acos_map = _load(args.term_acos) if args.term_acos else {}
+        refusal = _spend_up_refusal(
+            _candidate_from_args(args),
+            gate_frame=gate_frame,
+            catalog_path=args.catalog,
+            cover_map=cover_map,
+            term_acos_map=term_acos_map,
+            marketplace=args.marketplace,
+            write_path=True,
+        )
+        if refusal is not None:
+            json.dump(dataclasses.asdict(refusal), sys.stdout)
+            sys.stdout.write("\n")
+            return 0
 
     with habibos_logging.logged_call("queue_run", marketplace=args.marketplace) as end_fields:
         result = apply.apply(
