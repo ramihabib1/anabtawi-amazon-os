@@ -108,9 +108,13 @@ def _spend_up_refusal(
             return refusal
 
     # 3. Matured-window gate (Plan 05) — an efficiency verdict on an immature window refuses.
-    if live is not None and "days_of_data" in live:
+    #    A present-but-null days_of_data (a failed/partial agent read) is "no data": skip this
+    #    gate rather than crash on int(None). Mirror cover_gate's None-is-no-data discipline —
+    #    the engine never turns a missing live read into an uncaught TypeError (hard rule 4).
+    days_of_data = live.get("days_of_data") if live is not None else None
+    if days_of_data is not None:
         ad_product = live.get("ad_product", "SPONSORED_PRODUCTS")
-        refusal = harvest.judge_later_blocked(action, ad_product, int(live["days_of_data"]))
+        refusal = harvest.judge_later_blocked(action, ad_product, int(days_of_data))
         if isinstance(refusal, GateRefusal):
             return refusal
 
