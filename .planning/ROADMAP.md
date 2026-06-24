@@ -219,7 +219,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] 09-01-PLAN.md — Wave 1: flip the magnitude cap (50) + cover floor (42), ADD conversion_benchmark (12) to thresholds.toml; lay the RED contracts for cover_gate / rank_queue / queue (QUEUE-01/03, EXEC-05)
 - [x] 09-02-PLAN.md — Wave 2: cover_gate.py — the inventory + conversion spend-up gate (refuse sub-cover/sub-conversion, never clamp) (EXEC-05)
 - [x] 09-03-PLAN.md — Wave 2: rank_queue.py + QueueRow — the expected-$/wk estimator + dollars-first ranker (None-estimate rows last) (QUEUE-01)
-- [ ] 09-04-PLAN.md — Wave 3: queue.py — the auto-vs-needs-approval class-tagger + dollar-ranked table renderer (QUEUE-01/02/03)
+- [x] 09-04-PLAN.md — Wave 3: queue.py — the auto-vs-needs-approval class-tagger + dollar-ranked table renderer (QUEUE-01/02/03)
 - [ ] 09-05-PLAN.md — Wave 4: harvest.py (two-class attribution + internal-competition + graduation) + queue_run.py CLI (rank → gate → render → batch-approval → apply spine) + live checkpoint (WRITE-04, QUEUE-02/04, EXEC-02)
 
 ### Phase 10: New Coverage-Gap Campaigns + Archive Hygiene
@@ -240,7 +240,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 4/4 | Complete   | 2026-06-24 |
-| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 3/5 | In Progress|  |
+| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 4/5 | In Progress|  |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
 
 ---
