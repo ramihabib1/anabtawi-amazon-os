@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: "Apply spine built, pytest-green, and proven live (read-only FIND + dryRun:true against the real account). Stop-the-bleed batch correctly NOT run — live data confirmed the dead-SKU bleed is already $0 (Rami's 2026-06-17 retarget). No live mutating write made. Next: Phase 09 (daily ranked queue + explicit-approval spend-up)."
-last_updated: "2026-06-24T12:20:30.127Z"
-last_activity: 2026-06-24 -- Phase 08 complete; bleed verified already gone; spine live-validated
+status: executing
+last_updated: "2026-06-24T12:50:01.566Z"
+last_activity: 2026-06-24 -- Phase 09 execution started
 progress:
   total_phases: 5
   completed_phases: 3
@@ -21,15 +21,15 @@ progress:
 
 - **Core value (M2):** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — turning reviewed PPC artifacts into real, approval-gated account changes via DataDoe `actions_start`, with the margin gate protecting net margin ≥ ~15% and zero autonomous spend-up.
 - **Milestone:** v2.0 — Execution Era (Gated PPC Write Path). PPC writes only; catalog refresh / restocks / listing writes deferred.
-- **Current focus:** Phase 09 — daily ranked queue + explicit-approval spend-up (Phase 08 complete)
+- **Current focus:** Phase 09 — daily-ranked-queue-explicit-approval-spend-up
 - **Project mode:** execution-layer on the M1 read-only engine (agent does MCP I/O; hand-written, pytest-covered Python owns the money truth)
 
 ## Current Position
 
-Phase: 08 (reversible-write-apply-spine-stop-the-bleed) — COMPLETE
-Plan: 4 of 4 complete (08-01, 08-02, 08-03 merged; 08-04 runbook + live verification → batch stood down)
-Status: Apply spine built, pytest-green, and proven live (read-only FIND + dryRun:true against the real account). Stop-the-bleed batch correctly NOT run — live data confirmed the dead-SKU bleed is already $0 (Rami's 2026-06-17 retarget). No live mutating write made. Next: Phase 09 (daily ranked queue + explicit-approval spend-up).
-Last activity: 2026-06-24 -- Phase 08 complete; bleed verified already gone; spine live-validated
+Phase: 09 (daily-ranked-queue-explicit-approval-spend-up) — EXECUTING
+Plan: 1 of 5
+Status: Executing Phase 09
+Last activity: 2026-06-24 -- Phase 09 execution started
 
 ## Performance Metrics
 
