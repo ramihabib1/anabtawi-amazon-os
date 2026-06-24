@@ -264,6 +264,20 @@ def _apply_mode(args) -> int:
         parsed = gate.parse(Path(args.artifact), args.status)
         gate_frame = None if isinstance(parsed, Refusal) else parsed
 
+    # A spend-up that reaches the write path with NO margin frame must REFUSE, never crash
+    # (CR-04). apply.apply -> _evaluate_margin -> gate.evaluate(None, ...) would dereference a
+    # None frame (AttributeError 'NoneType' has no attribute 'to_dicts'). The constitution
+    # requires a missing money-gate input to surface a TYPED refusal, never an uncaught
+    # traceback and never a silent proceed (hard rule 4). Refuse early with the gate's grammar.
+    if action.is_spend_increasing and gate_frame is None:
+        refusal = GateRefusal(
+            "no margin — no premium export (--artifact) supplied for the spend-up margin gate",
+            code="no_margin",
+        )
+        json.dump(dataclasses.asdict(refusal), sys.stdout)
+        sys.stdout.write("\n")
+        return 0
+
     with habibos_logging.logged_call("queue_run", marketplace=args.marketplace) as end_fields:
         result = apply.apply(
             action,

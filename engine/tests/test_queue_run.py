@@ -32,6 +32,10 @@ import queue_run  # noqa: E402 — imported after the sys.path insert above
 FIXTURES = REPO_ROOT / "tests" / "fixtures"
 CANDIDATES = str(FIXTURES / "queue_candidates.json")
 COVER = str(FIXTURES / "queue_cover_map.json")
+# The committed premium window-sum export the margin gate reads (the --artifact for a spend-up).
+# A spend-up reaching the write path with NO --artifact must REFUSE (no_margin), never apply
+# (CR-04) — so a spend-up apply test MUST supply this real margin frame to clear the gate.
+PROFIT = str(FIXTURES / "profit_by_sku_30d.csv")
 # Any committed JSON works as a stand-in MCP fixture path — the apply.apply spy never reads it.
 DRYRUN = str(FIXTURES / "actions_start_dryrun_biddown.json")
 APPLYR = str(FIXTURES / "actions_get_completed.json")
@@ -121,7 +125,46 @@ def test_apply_mode_without_approve_refuses(monkeypatch, capsys) -> None:
 
 
 def test_apply_mode_with_approve_applies(monkeypatch, capsys) -> None:
-    """A spend-up in apply mode WITH --approve runs apply.apply and returns the applied result."""
+    """A spend-up in apply mode WITH --approve AND a margin frame runs apply.apply.
+
+    The --artifact (the premium window-sum export) is REQUIRED: a spend-up reaching the write
+    path with no margin frame must refuse no_margin (CR-04), so an applying spend-up test must
+    hand the gate a real frame to clear. EU-Z87B-ZRBZ's window (CM ~36%, ceiling ~21%) clears a
+    +21 CAD budget-up (projected TACOS ~7.7% < 21%), so the gate passes and the write applies.
+    """
+    calls = _spy(monkeypatch)
+    rc = queue_run.main(
+        [
+            "apply",
+            "--approve",
+            "--sku", "EU-Z87B-ZRBZ",
+            "--action-type", "budget_up",
+            "--delta-spend", "21.0",
+            "--entity-type", "campaigns",
+            "--entity-id", "CMP-1000000000003",
+            "--artifact", PROFIT,
+            "--dryrun-resp", DRYRUN,
+            "--apply-resp", APPLYR,
+            "--status-resp", STATUS,
+            "--find-echo", FINDE,
+        ]
+    )
+    assert rc == 0
+    assert len(calls) == 1
+    assert calls[0].action_type == "budget_up"
+    out = capsys.readouterr().out
+    payload = json.loads(out.strip().splitlines()[-1])
+    assert payload["action_id"] == "ACT-TEST-0001"
+    assert payload["status"] == "COMPLETED"
+
+
+def test_apply_mode_spend_up_without_artifact_refuses_no_margin(monkeypatch, capsys) -> None:
+    """A spend-up reaching the write path with NO --artifact refuses no_margin, never crashes (CR-04).
+
+    Without a margin frame, apply.apply -> gate.evaluate would dereference a None frame
+    (AttributeError). The constitution requires a typed refusal for a missing money-gate input,
+    so _apply_mode refuses BEFORE apply.apply is ever called.
+    """
     calls = _spy(monkeypatch)
     rc = queue_run.main(
         [
@@ -139,12 +182,10 @@ def test_apply_mode_with_approve_applies(monkeypatch, capsys) -> None:
         ]
     )
     assert rc == 0
-    assert len(calls) == 1
-    assert calls[0].action_type == "budget_up"
+    assert calls == []  # the real write never fired
     out = capsys.readouterr().out
     payload = json.loads(out.strip().splitlines()[-1])
-    assert payload["action_id"] == "ACT-TEST-0001"
-    assert payload["status"] == "COMPLETED"
+    assert payload["code"] == "no_margin"
 
 
 def test_no_seller_uuid_in_stdout(capsys) -> None:
