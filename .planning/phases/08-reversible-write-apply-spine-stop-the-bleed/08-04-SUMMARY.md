@@ -135,6 +135,15 @@ Task 1 (pure documentation authoring).
   EXEC-01 are **not** yet complete — they land only when the live canary + batch run and
   reconcile (Task 3).
 
+## Self-Check: PASSED
+
+- FOUND: `tasks/stop-the-bleed-batch.md`
+- FOUND: `.planning/phases/08-reversible-write-apply-spine-stop-the-bleed/08-04-SUMMARY.md`
+- FOUND commit `433c901` (Task 1 runbook)
+- FOUND commit `c8e4a80` (partial summary)
+- Diff base→HEAD shows ONLY the two intended files — no `data/actions_ledger.jsonl`, no
+  `state/decisions.md`, no live-write artifacts. Zero live account writes confirmed.
+
 ---
 *Phase: 08-reversible-write-apply-spine-stop-the-bleed*
 *Plan: 04 — PARTIAL (Task 1 of 3)*
