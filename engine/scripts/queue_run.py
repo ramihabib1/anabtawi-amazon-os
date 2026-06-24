@@ -185,6 +185,18 @@ def _auto_apply(candidate: dict, args, marketplace: str):
     now LIVE at 50 — refuses an over-cap reversible. Returns the typed spine result. The agent
     supplies the reversible's dryRun/apply/poll/FIND responses as local files (the seam).
     """
+    # READ + INJECT THE LIVE CAP (CR-05): apply._max_reversible_pct reads ONLY
+    # action.params["max_reversible_pct_change"]; it never reads thresholds.toml. The candidate
+    # fixtures inject no such param, so the cap reached magnitude.check as None -> seeded
+    # permissive -> the documented "live at 50%" reversible cap NEVER fired (a -90% bid_down
+    # would auto-apply unbounded). Read the live cap from config and seed it into params so the
+    # auto-apply path actually enforces it. setdefault: an explicit agent-injected per-action cap
+    # still wins; absent one, the live config cap (50) applies. A None cap (key unset/empty)
+    # stays permissive — the magnitude gate's documented seeded-permissive asymmetry (D-01/D-02).
+    cap = thresholds.read("max_reversible_pct_change", marketplace)
+    params = dict(candidate.get("params", {}))
+    if cap is not None:
+        params.setdefault("max_reversible_pct_change", cap)
     action = ProposedAction(
         sku=candidate["sku"],
         action_type=candidate["action_type"],
@@ -192,7 +204,7 @@ def _auto_apply(candidate: dict, args, marketplace: str):
         marketplace=marketplace,
         entity_type=candidate.get("entity_type"),
         entity_id=candidate.get("entity_id"),
-        params=candidate.get("params", {}),
+        params=params,
     )
     return apply.apply(
         action,

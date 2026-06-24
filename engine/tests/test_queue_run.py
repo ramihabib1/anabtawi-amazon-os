@@ -104,6 +104,33 @@ def test_render_auto_applies_reversible_not_spend_up(monkeypatch, capsys) -> Non
     assert "auto-applied" in out  # the reversible was actually applied, not just labelled
 
 
+def test_auto_apply_injects_live_reversible_cap(monkeypatch, capsys) -> None:
+    """The auto-apply action carries the live 50% reversible cap in its params (CR-05).
+
+    apply._max_reversible_pct reads ONLY action.params["max_reversible_pct_change"] — it never
+    reads thresholds.toml. The candidate fixtures inject no such param, so before CR-05 the cap
+    reached magnitude.check as None (seeded permissive) and the documented "live at 50%" cap
+    never fired. _auto_apply now reads thresholds.read and seeds it, so the cap actually enforces.
+    """
+    calls = _spy(monkeypatch)
+    rc = queue_run.main(
+        [
+            "render",
+            "--candidates", CANDIDATES,
+            "--cover", COVER,
+            "--dryrun-resp", DRYRUN,
+            "--apply-resp", APPLYR,
+            "--status-resp", STATUS,
+            "--find-echo", FINDE,
+        ]
+    )
+    assert rc == 0
+    assert len(calls) == 1
+    # The live cap (thresholds.toml max_reversible_pct_change = 50) is injected into the action
+    # params so magnitude.check actually enforces it — never silently permissive.
+    assert calls[0].params.get("max_reversible_pct_change") == 50.0
+
+
 def test_apply_mode_without_approve_refuses(monkeypatch, capsys) -> None:
     """A needs-approval spend-up in apply mode WITHOUT --approve refuses; apply.apply not called."""
     calls = _spy(monkeypatch)
