@@ -190,6 +190,43 @@ class SkuRow:
 
 
 @dataclass(frozen=True)
+class QueueRow:
+    """One ranked PPC-change proposal in the daily dollar-ranked queue (D-07 / QUEUE-01).
+
+    Mirrors SkuRow's frozen, None-means-undefined discipline. The ranker
+    (rank_queue.rank) emits one of these per candidate, sorted by expected weekly $
+    impact DESCENDING with no-estimate rows LAST.
+
+    expected_weekly_usd of None means "no defensible $ estimate" (e.g. a zero/missing
+    denominator made the underlying ACOS undefined) — it is NEVER 0 and NEVER a guess
+    (CLAUDE.md hard rules 3 + 4, the tacos._ratio None-on-undefined grammar). A None
+    estimate is DISTINCT from a real 0.0 and sorts LAST, never silently dropped.
+
+    Fields:
+      - sku:                 the seller SKU the proposed change touches.
+      - entity:              the campaign / target / adGroup label the change applies to.
+      - action_type:         "pause" | "negative" | "bid_down" | "bid_up" | "budget_up" |
+                             "harvest" | "negative_phrase" — the proposed PPC move.
+      - current:             current bid/budget (None when undefined).
+      - proposed:            proposed bid/budget (None when undefined).
+      - expected_weekly_usd: the estimator output — None when undefined, NEVER 0/a guess.
+      - provenance:          the DataDoe source + window behind the numbers (hard rule 5).
+      - cls:                 the reversibility class the Plan-04 renderer/queue.py sets
+                             ("auto" | "needs-approval"); defaults to "auto" — the ranker
+                             leaves it at the default (it computes no reversibility class).
+    """
+
+    sku: str
+    entity: str
+    action_type: str
+    current: float | None
+    proposed: float | None
+    expected_weekly_usd: float | None
+    provenance: str
+    cls: str = "auto"
+
+
+@dataclass(frozen=True)
 class Answer:
     """A successful, provenance-cited answer (D-06).
 
