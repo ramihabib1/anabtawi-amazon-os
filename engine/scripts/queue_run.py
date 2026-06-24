@@ -246,7 +246,12 @@ def _render_mode(args) -> int:
         parsed = gate.parse(Path(args.artifact), args.status)
         gate_frame = None if isinstance(parsed, Refusal) else parsed
 
-    rows = queue.tag(rank_queue.rank(args.candidates))
+    # WR-02: pass the OPTIONAL operator materiality bar (min window ad spend to estimate a
+    # marginal return) read from config. Absent from thresholds.toml today -> None -> seeded
+    # permissive (estimates computed as before). A set bar makes a sub-materiality candidate's
+    # estimate None so a tiny/anomalous denominator (e.g. a 1% window ACOS) cannot rank #1.
+    materiality = thresholds.read("materiality_min_ad_spend", args.marketplace)
+    rows = queue.tag(rank_queue.rank(args.candidates, materiality))
 
     # WR-04: annotations are keyed by the row's RANK (its 1-based position in the rendered
     # table), not by sku [action] alone. The table (queue.render) enumerates rows from rank 1 in

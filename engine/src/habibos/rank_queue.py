@@ -37,7 +37,9 @@ from .result import QueueRow
 __all__ = ["estimate_weekly_usd", "rank"]
 
 
-def estimate_weekly_usd(candidate: dict) -> float | None:
+def estimate_weekly_usd(
+    candidate: dict, materiality_min_ad_spend: float | None = None
+) -> float | None:
     """Expected weekly $ impact of a candidate, or None when undefined.
 
     Clones the tacos._ratio None-on-undefined shape: any zero/missing denominator (here a
@@ -49,6 +51,20 @@ def estimate_weekly_usd(candidate: dict) -> float | None:
     where window_acos_fraction = ad_spend_sum / ad_sales_sum over the cited window. Spending
     $X more at a window ACOS fraction f returns X / f in incremental sales; a spend-down
     (delta_spend_weekly < 0) yields a negative figure (a saving). The result rounds to cents.
+
+    MODEL ASSUMPTION + ITS LIMIT (WR-02): this extrapolates the candidate's HISTORICAL AVERAGE
+    window ACOS to MARGINAL spend. That is economically optimistic — marginal spend rarely
+    converts at the average, and a tiny/anomalous ad_spend_sum (e.g. 0.5 against 50.0 sales = a
+    1% window ACOS) produces an implausibly large figure (a $21/wk raise -> ~$2100/wk) that no
+    operator would trust as a forecast. The figure is a MODEL ARTIFACT, not a promise. To stop a
+    tiny denominator from dominating the dollar ranking, an operator MAY set a materiality bar
+    `materiality_min_ad_spend` (the minimum window ad spend below which there is too little
+    history to estimate a marginal return): below it, the estimate is None (undefined — the same
+    None-on-undefined grammar), so the row sorts LAST instead of ranking #1 on a 1% ACOS
+    artifact. SEEDED PERMISSIVE (mirror magnitude.check / the cover-vs-magnitude asymmetry):
+    when the bar is None (unset — the current live state, no operator value invented), the
+    estimate is computed exactly as before. Tightening is a thresholds.toml edit, not a code
+    change; never an engine-invented number (CLAUDE.md hard rule 4).
     """
     delta_spend_weekly = candidate.get("delta_spend_weekly")
     ad_spend_sum = candidate.get("ad_spend_sum")
@@ -56,6 +72,11 @@ def estimate_weekly_usd(candidate: dict) -> float | None:
 
     # Missing component -> undefined (never coerce a missing input to 0).
     if delta_spend_weekly is None or ad_spend_sum is None or ad_sales_sum is None:
+        return None
+    # Below the operator's materiality bar (if set) -> too little ad-spend history to estimate a
+    # marginal return -> undefined (None), so a 1%-ACOS artifact cannot dominate the ranking.
+    # Unset bar (None) is seeded permissive: compute as before (no engine-invented threshold).
+    if materiality_min_ad_spend is not None and ad_spend_sum < materiality_min_ad_spend:
         return None
     # Zero/missing denominator -> undefined ACOS -> None (the _ratio grammar).
     if ad_sales_sum == 0:
@@ -66,7 +87,9 @@ def estimate_weekly_usd(candidate: dict) -> float | None:
     return round(delta_spend_weekly / acos_fraction, 2)
 
 
-def rank(candidates_path: str | Path) -> list[QueueRow]:
+def rank(
+    candidates_path: str | Path, materiality_min_ad_spend: float | None = None
+) -> list[QueueRow]:
     """Read the committed candidate set and emit dollar-ranked, provenance-cited QueueRows.
 
     The agent feeds the candidate components into a local JSON artifact (no socket here, D-04);
@@ -78,6 +101,12 @@ def rank(candidates_path: str | Path) -> list[QueueRow]:
     `source`/`window`), so every QueueRow cites provenance (hard rule 5) without the engine ever
     naming the source itself. `cls` is left at the QueueRow default ("auto") — Plan 04's queue.py
     sets the real reversibility class; this module computes none, renders nothing, opens no socket.
+
+    `materiality_min_ad_spend` (WR-02): the OPTIONAL operator materiality bar the CALLER reads
+    from config (thresholds.read) and passes in — this module stays config-free (D-04). None
+    (unset, the current live state) leaves every estimate computed as before (seeded permissive);
+    a set bar makes a sub-materiality candidate's estimate None so a 1%-ACOS artifact cannot
+    rank #1. Never an engine-invented number — the bar is operator policy or it is absent.
     """
     raw = json.loads(Path(candidates_path).read_text())
     candidates = raw["candidates"]
@@ -98,7 +127,7 @@ def rank(candidates_path: str | Path) -> list[QueueRow]:
                 action_type=c.get("action_type", ""),
                 current=c.get("current"),
                 proposed=c.get("proposed"),
-                expected_weekly_usd=estimate_weekly_usd(c),
+                expected_weekly_usd=estimate_weekly_usd(c, materiality_min_ad_spend),
                 provenance=provenance,
             )
         )

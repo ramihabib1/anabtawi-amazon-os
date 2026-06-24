@@ -101,3 +101,33 @@ def test_every_row_carries_provenance() -> None:
         # Cites the premium source id and a window range.
         assert "57a0cb319c" in r.provenance
         assert ".." in r.provenance
+
+
+# The 1%-window-ACOS artifact: EU-Z87B-ZRBZ has ad_spend_sum=0.5 (tiny), so a $21/wk raise
+# extrapolates to ~$2100/wk on the historical AVERAGE ACOS — a model artifact, not a forecast.
+ARTIFACT_SKU = "EU-Z87B-ZRBZ"
+
+
+def test_materiality_bar_unset_is_seeded_permissive() -> None:
+    """WR-02: an unset materiality bar (None) computes every estimate as before (permissive)."""
+    default_rows = {r.sku: r for r in rank_queue.rank(FIXTURE)}
+    explicit_none = {r.sku: r for r in rank_queue.rank(FIXTURE, None)}
+    # The tiny-denominator artifact still produces its (large) estimate when no bar is set.
+    assert default_rows[ARTIFACT_SKU].expected_weekly_usd is not None
+    assert (
+        explicit_none[ARTIFACT_SKU].expected_weekly_usd
+        == default_rows[ARTIFACT_SKU].expected_weekly_usd
+    )
+
+
+def test_materiality_bar_nullifies_sub_materiality_estimate() -> None:
+    """WR-02: a set bar makes a sub-materiality candidate's estimate None (sorts LAST, never #1).
+
+    EU-Z87B-ZRBZ's ad_spend_sum is 0.5; a $5 materiality bar puts it below the threshold, so its
+    estimate is None (undefined — the None-on-undefined grammar) and it no longer dominates the
+    ranking on a 1% window-ACOS artifact. Estimates above the bar are unaffected.
+    """
+    rows = {r.sku: r for r in rank_queue.rank(FIXTURE, materiality_min_ad_spend=5.0)}
+    assert rows[ARTIFACT_SKU].expected_weekly_usd is None
+    # A materially-spending candidate above the bar keeps its estimate.
+    assert rows["FX-M8MA-MMSA"].expected_weekly_usd is not None
