@@ -232,6 +232,12 @@ def _status_of(result) -> str:
         return f"applied:{result.status}"
     if isinstance(result, (Refusal, GateRefusal)):
         return f"refused:{result.code}"
+    # IN-03: a typed PASS (GateVerdict) is labelled, never bucketed as opaque "unknown". apply.apply
+    # returns only AppliedResult/Refusal/GateRefusal today, so this is not reachable from
+    # _auto_apply — but if a pass ever surfaces here it must read as a pass, not be silently
+    # dropped. (This also makes the GateVerdict import live, resolving IN-02's dead-import note.)
+    if isinstance(result, GateVerdict):
+        return "gate-pass"
     return "unknown"
 
 
