@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-06-22T18:38:25.303Z"
-last_activity: 2026-06-22 -- Phase 08 execution started
+status: "Apply spine built, pytest-green, and proven live (read-only FIND + dryRun:true against the real account). Stop-the-bleed batch correctly NOT run — live data confirmed the dead-SKU bleed is already $0 (Rami's 2026-06-17 retarget). No live mutating write made. Next: Phase 09 (daily ranked queue + explicit-approval spend-up)."
+last_updated: "2026-06-24T11:38:29.559Z"
+last_activity: 2026-06-24 -- Phase 08 complete; bleed verified already gone; spine live-validated
 progress:
   total_phases: 5
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 12
-  completed_plans: 8
-  percent: 40
+  completed_plans: 12
+  percent: 60
 ---
 
 # Project State: Habib OS
