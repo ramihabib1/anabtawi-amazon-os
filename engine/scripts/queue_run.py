@@ -231,7 +231,12 @@ def _status_of(result) -> str:
 def _render_mode(args) -> int:
     """Rank -> tag -> render the daily table; annotate spend-up refusals; auto-apply reversibles."""
     payload = _load(args.candidates)
-    candidates = {c["sku"]: c for c in payload.get("candidates", [])}
+    # WR-05: key by a PER-ROW identity (sku, entity), not by sku alone. A SKU running several
+    # campaigns yields multiple candidates with the same sku but DIFFERENT entities; a sku-only
+    # dict kept only the LAST, so every ranked row for that sku resolved to the same (wrong)
+    # candidate — gating the wrong entity_id / params. rank_queue's QueueRow carries the same
+    # `entity`, so (sku, entity) maps each ranked row to its OWN candidate.
+    candidates = {(c["sku"], c.get("entity", "")): c for c in payload.get("candidates", [])}
 
     # Optional agent-supplied read inputs (skip a gate cleanly when its input is absent).
     cover_map = _load(args.cover) if args.cover else {}
@@ -248,7 +253,7 @@ def _render_mode(args) -> int:
     can_auto_apply = bool(args.dryrun_resp and args.apply_resp and args.status_resp and args.find_echo)
 
     for row in rows:
-        candidate = candidates.get(row.sku, {})
+        candidate = candidates.get((row.sku, row.entity), {})
         note = ""
         if row.cls == queue.NEEDS_APPROVAL:
             if row.action_type in SPEND_UP_ACTIONS:
