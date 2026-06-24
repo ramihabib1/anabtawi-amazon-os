@@ -120,6 +120,11 @@ def render_row(
 
     `class` is derived here via classify (the renderer formats; the class map decides) so a
     single row can be emitted without first building a QueueRow.
+
+    DELIBERATE FUTURE-USE PUBLIC API (IN-01): this builder is tested but NOT yet on any
+    production path — `render` (below) builds its table cells directly from QueueRow fields, it
+    does NOT call render_row. It is exported and contract-pinned so a future per-row / JSON
+    surface can reuse the exact schema; a reader should not assume it runs in the current table.
     """
     return {
         "rank": rank,

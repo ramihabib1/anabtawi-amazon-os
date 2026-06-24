@@ -124,6 +124,11 @@ def graduates(orders: int, acos: float | None, ceiling: float | None) -> bool:
     Requires proven conversion AND efficiency over a matured window: at least
     GRADUATION_MIN_ORDERS attributed orders AND a defined ACOS at or under the SKU's gate
     ceiling. A missing ACOS or ceiling never graduates (no defensible basis to fund).
+
+    DELIBERATE FUTURE-USE PUBLIC API (IN-01): this predicate is tested but NOT yet called by any
+    production path (rank_queue / queue.render / queue_run do not evaluate graduation). It is
+    exported and contract-pinned now so the harvest-candidate formation step that consumes it can
+    be wired later without re-deriving the rule — it does NOT run in the current pipeline.
     """
     return (
         orders >= GRADUATION_MIN_ORDERS
