@@ -26,10 +26,10 @@ progress:
 
 ## Current Position
 
-Phase: 08 (reversible-write-apply-spine-stop-the-bleed) — EXECUTING
-Plan: 1 of 4
-Status: Executing Phase 08
-Last activity: 2026-06-22 -- Phase 08 execution started
+Phase: 08 (reversible-write-apply-spine-stop-the-bleed) — BLOCKED on org-enable gate
+Plan: 3 of 4 complete (08-01, 08-02, 08-03 done + merged; 08-04 Task 1 runbook done, Tasks 2/3 blocked)
+Status: Apply spine built/tested/green. 08-04 awaiting Rami: (1) DataDoe Settings→Actions org-enable of the 3 reversible action types, (2) explicit approval to run the canary + stop-the-bleed batch (first real writes).
+Last activity: 2026-06-24 -- Phase 08 waves 0-2 complete; 08-04 runbook written; paused at live-write gate
 
 ## Performance Metrics
 
