@@ -217,8 +217,8 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
   5. Engine-verified efficient winners are funded up to their gate ceiling and internal keyword competition is consolidated (a term live in >1 ENABLED campaign is flagged and blocked from a bid-up until consolidated to one owning campaign) (EXEC-02); and no budget is scaled onto a SKU below the ≥6-week stock-cover or below-benchmark-conversion threshold — restock-gated SKUs (e.g. GG-0DC1 at 1 FBA unit) are refused until stock is confirmed (EXEC-05).
 **Plans**: 5 plans (4 waves)
 - [x] 09-01-PLAN.md — Wave 1: flip the magnitude cap (50) + cover floor (42), ADD conversion_benchmark (12) to thresholds.toml; lay the RED contracts for cover_gate / rank_queue / queue (QUEUE-01/03, EXEC-05)
-- [ ] 09-02-PLAN.md — Wave 2: cover_gate.py — the inventory + conversion spend-up gate (refuse sub-cover/sub-conversion, never clamp) (EXEC-05)
-- [ ] 09-03-PLAN.md — Wave 2: rank_queue.py + QueueRow — the expected-$/wk estimator + dollars-first ranker (None-estimate rows last) (QUEUE-01)
+- [x] 09-02-PLAN.md — Wave 2: cover_gate.py — the inventory + conversion spend-up gate (refuse sub-cover/sub-conversion, never clamp) (EXEC-05)
+- [x] 09-03-PLAN.md — Wave 2: rank_queue.py + QueueRow — the expected-$/wk estimator + dollars-first ranker (None-estimate rows last) (QUEUE-01)
 - [ ] 09-04-PLAN.md — Wave 3: queue.py — the auto-vs-needs-approval class-tagger + dollar-ranked table renderer (QUEUE-01/02/03)
 - [ ] 09-05-PLAN.md — Wave 4: harvest.py (two-class attribution + internal-competition + graduation) + queue_run.py CLI (rank → gate → render → batch-approval → apply spine) + live checkpoint (WRITE-04, QUEUE-02/04, EXEC-02)
 
@@ -240,7 +240,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 4/4 | Complete   | 2026-06-24 |
-| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 1/5 | In Progress|  |
+| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 3/5 | In Progress|  |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
 
 ---
