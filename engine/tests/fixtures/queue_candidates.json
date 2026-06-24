@@ -1,0 +1,74 @@
+{
+  "_comment": [
+    "Hand-authored candidate set for the Phase-9 dollar-ranked queue contract (Plan 09-01, Wave 1 RED).",
+    "Each row carries the raw components the ranker's weekly-$ estimator needs, NOT a precomputed estimate:",
+    "the rank_queue test rebuilds the expected weekly $ from these components (the test_tacos _pct-mirror",
+    "pattern, T-09-01-03 mitigation) so a fabricated estimate cannot pass review unnoticed.",
+    "Sanitized component sums only — no seller UUID, no network, no live ids.",
+    "ESTIMATE MODEL (the ranker implements this in Wave 3, Plan 03): a spend-up's expected incremental",
+    "weekly sales $ = delta_spend_weekly / window_acos_fraction, where window_acos_fraction =",
+    "ad_spend_sum / ad_sales_sum over the cited window. A zero/missing ad_sales_sum (zero denominator)",
+    "means the ACOS is undefined -> expected_weekly_usd is None (NOT 0, NOT a guess), and that row sorts",
+    "LAST (the D-07 None-sorts-last key). Reversible spend-DOWN rows have delta_spend_weekly <= 0.",
+    "SKUs are real CA fixture SKUs (mirror profit_by_sku_30d.csv) so the contract reads as production-shaped."
+  ],
+  "window": "2026-05-12 .. 2026-06-10 (trailing 30d, CA)",
+  "source": "DataDoe premium Profit by SKU & Date (57a0cb319c)",
+  "candidates": [
+    {
+      "sku": "EU-Z87B-ZRBZ",
+      "action_type": "budget_up",
+      "entity": "SP-EU-Z87B campaign",
+      "current": 5.0,
+      "proposed": 8.0,
+      "delta_spend_weekly": 21.0,
+      "ad_spend_sum": 0.5,
+      "ad_sales_sum": 50.0,
+      "provenance": "DataDoe premium Profit by SKU & Date (57a0cb319c) | window 2026-05-12..2026-06-10"
+    },
+    {
+      "sku": "GG-0DC1-SKHG",
+      "action_type": "bid_up",
+      "entity": "TGT GG-0DC1 exact 'baklava assorted'",
+      "current": 0.45,
+      "proposed": 0.60,
+      "delta_spend_weekly": 7.0,
+      "ad_spend_sum": 6.05,
+      "ad_sales_sum": 29.99,
+      "provenance": "DataDoe premium Profit by SKU & Date (57a0cb319c) | window 2026-05-12..2026-06-10"
+    },
+    {
+      "sku": "09-AJOP-CS83",
+      "action_type": "harvest",
+      "entity": "ST '09 ajop gift box' -> new exact",
+      "current": 0.0,
+      "proposed": 0.40,
+      "delta_spend_weekly": 3.5,
+      "ad_spend_sum": 4.28,
+      "ad_sales_sum": 77.97,
+      "provenance": "DataDoe premium Profit by SKU & Date (57a0cb319c) | window 2026-05-12..2026-06-10"
+    },
+    {
+      "sku": "C5-TXQU-Y67R",
+      "action_type": "budget_up",
+      "entity": "SP-C5-TXQU campaign",
+      "current": 4.0,
+      "proposed": 7.0,
+      "delta_spend_weekly": 21.0,
+      "ad_spend_sum": 4.09,
+      "ad_sales_sum": 0.0,
+      "provenance": "DataDoe premium Profit by SKU & Date (57a0cb319c) | window 2026-05-12..2026-06-10"
+    },
+    {
+      "sku": "FX-M8MA-MMSA",
+      "action_type": "bid_down",
+      "entity": "TGT FX-M8MA broad 'sweets'",
+      "current": 0.80,
+      "proposed": 0.55,
+      "delta_spend_weekly": -18.0,
+      "ad_spend_sum": 260.24,
+      "ad_sales_sum": 351.9,
+      "provenance": "DataDoe premium Profit by SKU & Date (57a0cb319c) | window 2026-05-12..2026-06-10"
+    }
+  ]
+}
