@@ -40,8 +40,20 @@ acos_ceiling_pct = 30
 # D-09: operator-adopted recommendation (15% healthy band for an established, non-launch
 #   catalog). TUNE after the first real answer; eventually per-SKU break-even at Phase 3.5.
 tacos_ceiling_pct = 15
-# Days-of-cover floor below which inventory is "at risk", e.g. 21
-days_of_cover_floor = ""
+# Days-of-cover floor: a SKU is REFUSED from any spend-INCREASE below this cover —
+#   (on-hand + inbound) / velocity. 42 = 6 weeks x 7 (D-03, the "maintain" tier from
+#   state/targets.md:23 min_weeks_cover_maintain: 6). FLIPPED LIVE in Phase 9 (was "").
+#   refuse-never-default: a MISSING floor REFUSES, never assumes a default (the asymmetry
+#   vs the magnitude cap below, where empty = permissive). The cover gate (Plan 02) reads
+#   this and routes a sub-cover spend-up to a typed refusal, surfacing the actual cover.
+days_of_cover_floor = 42
+# Conversion-rate floor % below which a SKU is REFUSED from any spend-INCREASE (D-05).
+#   PROVISIONAL — mirrors state/targets.md:34 conversion_benchmark: 12%; retune to the
+#   portfolio top-quartile conversion after a sales_and_traffic pull. This is a HARD
+#   refusal this phase (not advisory): the conversion gate (Plan 02) reads this and routes
+#   a sub-benchmark spend-up to a typed refusal. ADDED to the machine mirror in Phase 9 so
+#   the engine can read it via thresholds.read (it previously lived ONLY in targets.md).
+conversion_benchmark = 12
 # Spend with zero attributed orders that triggers a "wasted spend" flag (CAD), e.g. 5.00
 # Mirrors targets.md `waste_flag_min_spend: 10` (low-volume catalog -> low bar).
 zero_conversion_spend_trigger = 10
@@ -52,4 +64,7 @@ zero_conversion_spend_trigger = 10
 #   value here means PASS, not refuse (the documented asymmetry — see magnitude.py). To start
 #   capping reversible moves, set a number (e.g. 50 = refuse any move over 50%); the cap then
 #   REFUSES an over-cap move (never clamps). Tightening is a config edit, not a code change.
-max_reversible_pct_change = ""
+# FLIPPED LIVE in Phase 9 (D-01): a reversible bid/budget-down steeper than -50% per action is
+#   REFUSED and routed to explicit review (equal-to-cap passes — strict greater-than breach,
+#   never clamped, mirror magnitude.py:65).
+max_reversible_pct_change = 50
