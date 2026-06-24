@@ -93,6 +93,11 @@ def projected_tacos_pct(
     Holds window sales flat (the worst case) and adds the caller-supplied `delta_spend` to
     ad spend: (ad_spend_sum + delta_spend) / total_sales_sum * 100. Clones the
     None-on-zero-denominator grammar — a zero/missing `total_sales_sum` returns None, never 0.
+
+    UNIT CONTRACT (CR-02): `delta_spend` MUST be expressed in the SAME window as `ad_spend_sum`
+    and `total_sales_sum` (window CAD, NOT a weekly figure). Feeding a weekly delta against a
+    30-day window under-projects TACOS ~4x. The caller (queue_run._spend_up_refusal) scales any
+    weekly delta to the window before constructing the ProposedAction.
     """
     if total_sales_sum is None or total_sales_sum == 0:
         return None

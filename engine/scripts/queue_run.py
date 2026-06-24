@@ -78,17 +78,30 @@ def _spend_up_refusal(
     refuses short-circuits. This computes nothing — every decision is a pytest-covered module.
     """
     sku = candidate["sku"]
+    # UNIT MATCH (CR-02): gate.projected_tacos_pct adds delta_spend to a WINDOW ad_spend_sum
+    # and divides by the WINDOW total_sales_sum, so the delta MUST be in the SAME window unit
+    # as those sums (the candidate set's cited window — trailing 30d in the fixture), NOT the
+    # weekly figure rank_queue ranks on. Feeding the raw weekly delta against a 30d window
+    # under-projected TACOS ~4x and weakened the over-ceiling refusal in the permissive
+    # direction. We scale weekly -> window here so ProposedAction.delta_spend is unambiguously
+    # window CAD. The downstream cover/harvest gates read only is_spend_increasing (the SIGN),
+    # which scaling by a positive window/7 preserves. window_days is the candidate's own cited
+    # window length (default 30 = the fixture's documented trailing-30d window), never an
+    # invented threshold.
+    window_days = float(candidate.get("window_days", 30))
+    delta_spend_window = float(candidate.get("delta_spend_weekly", 0.0)) * (window_days / 7.0)
     action = ProposedAction(
         sku=sku,
         action_type=candidate["action_type"],
-        delta_spend=float(candidate.get("delta_spend_weekly", 0.0)),
+        delta_spend=delta_spend_window,
         marketplace=marketplace,
         entity_type=candidate.get("entity_type"),
         entity_id=candidate.get("entity_id"),
         params=candidate.get("params", {}),
     )
 
-    # 1. Margin gate (Phase 7) — projected TACOS vs the SKU's margin-derived ceiling.
+    # 1. Margin gate (Phase 7) — projected TACOS vs the SKU's margin-derived ceiling. delta_spend
+    #    is now window-scaled (CR-02) so the projection adds like-for-like window CAD.
     if gate_frame is not None and catalog_path is not None:
         verdict = gate.evaluate(gate_frame, action, catalog_path, marketplace)
         if isinstance(verdict, GateRefusal):
