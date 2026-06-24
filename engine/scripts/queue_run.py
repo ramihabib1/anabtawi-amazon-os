@@ -138,8 +138,15 @@ def _spend_up_refusal(
     #    A present-but-null days_of_data (a failed/partial agent read) is "no data": skip this
     #    gate rather than crash on int(None). Mirror cover_gate's None-is-no-data discipline —
     #    the engine never turns a missing live read into an uncaught TypeError (hard rule 4).
+    #
+    #    ACT-NOW BYPASS (WR-01): the harvest D-10 contract says an obviously-dead signal (an
+    #    inactive listing / zero lifetime orders / a campaign ENABLED on a discontinued SKU) must
+    #    NOT wait for the window to mature — those signals do not depend on attribution maturing.
+    #    The live read carries those fields, so consult harvest.is_act_now(live) FIRST and bypass
+    #    the maturity refusal when it is act-now (otherwise the documented bypass is unreachable
+    #    and an act-now signal on an immature window would be wrongly refused immature_window).
     days_of_data = live.get("days_of_data") if live is not None else None
-    if days_of_data is not None:
+    if days_of_data is not None and not harvest.is_act_now(live or {}):
         ad_product = live.get("ad_product", "SPONSORED_PRODUCTS")
         refusal = harvest.judge_later_blocked(action, ad_product, int(days_of_data))
         if isinstance(refusal, GateRefusal):

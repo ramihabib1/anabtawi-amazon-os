@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 from habibos import apply as apply_mod
-from habibos.result import AppliedResult
+from habibos.result import AppliedResult, GateRefusal
 
 # Make scripts/ importable so we can invoke the CLI's main() directly (mirror test_gate_action).
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -289,3 +289,63 @@ def test_no_seller_uuid_in_stdout(capsys) -> None:
     seller = os.environ.get("AMAZON_CA_SELLER_ID")
     if seller:
         assert seller not in out
+
+
+# ---- WR-01: is_act_now bypasses the matured-window gate -------------------------------------
+
+_ACT_NOW_CANDIDATE = {
+    "sku": "DEAD-SKU",
+    "action_type": "bid_up",
+    "delta_spend_weekly": 5.0,
+    "entity": "TGT dead",
+    "entity_id": "TGT-DEAD",
+}
+
+
+def test_immature_window_refuses_when_not_act_now() -> None:
+    """An immature window (3d < 7d SP) refuses immature_window for a normal, NON-act-now signal."""
+    cover_map = {
+        "DEAD-SKU": {
+            "days_of_cover": 90,
+            "conversion_pct": 25.0,
+            "days_of_data": 3,  # below the 7d SP maturity threshold
+            "ad_product": "SPONSORED_PRODUCTS",
+        }
+    }
+    refusal = queue_run._spend_up_refusal(
+        _ACT_NOW_CANDIDATE,
+        gate_frame=None,  # margin gate skipped (no frame) so we isolate the maturity branch
+        catalog_path=None,
+        cover_map=cover_map,
+        term_acos_map={},
+        marketplace="CA",
+    )
+    assert isinstance(refusal, GateRefusal)
+    assert refusal.code == "immature_window"
+
+
+def test_act_now_signal_bypasses_immature_window(monkeypatch) -> None:
+    """WR-01: an act-now signal on the SAME immature window bypasses the maturity wait (no refusal).
+
+    The harvest D-10 contract: an obviously-dead signal (here zero lifetime orders) must not wait
+    for the window to mature. With is_act_now wired in, the matured-window gate is skipped and the
+    chain returns None (no immature_window refusal) for the same 3d window.
+    """
+    cover_map = {
+        "DEAD-SKU": {
+            "days_of_cover": 90,
+            "conversion_pct": 25.0,
+            "days_of_data": 3,  # still immature, but...
+            "ad_product": "SPONSORED_PRODUCTS",
+            "lifetime_orders": 0,  # ...an act-now signal: bypass the maturity wait
+        }
+    }
+    refusal = queue_run._spend_up_refusal(
+        _ACT_NOW_CANDIDATE,
+        gate_frame=None,
+        catalog_path=None,
+        cover_map=cover_map,
+        term_acos_map={},
+        marketplace="CA",
+    )
+    assert refusal is None  # act-now -> the maturity gate did not refuse
