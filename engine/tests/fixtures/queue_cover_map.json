@@ -1,0 +1,14 @@
+{
+  "_comment": [
+    "Per-SKU live cover + conversion map the AGENT downloads (get_days_of_cover /",
+    "get_sales_and_traffic, D-04) and hands to queue_run render mode. Keyed by seller SKU.",
+    "GG-0DC1-SKHG is the restock-gated funded winner at ~1 FBA unit -> days_of_cover far",
+    "below the 42-day (6-week) floor, so its bid-up renders REFUSED cover_below_floor.",
+    "The other spend-up SKUs carry healthy cover + above-benchmark conversion so they pass",
+    "the read-only gate chain and render needs-approval (await --approve). No seller UUID."
+  ],
+  "GG-0DC1-SKHG": { "days_of_cover": 2, "conversion_pct": 25.0, "days_of_data": 30, "ad_product": "SPONSORED_PRODUCTS" },
+  "EU-Z87B-ZRBZ": { "days_of_cover": 60, "conversion_pct": 25.0, "days_of_data": 30, "ad_product": "SPONSORED_PRODUCTS" },
+  "09-AJOP-CS83": { "days_of_cover": 60, "conversion_pct": 25.0, "days_of_data": 30, "ad_product": "SPONSORED_PRODUCTS" },
+  "C5-TXQU-Y67R": { "days_of_cover": 60, "conversion_pct": 25.0, "days_of_data": 30, "ad_product": "SPONSORED_PRODUCTS" }
+}
