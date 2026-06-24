@@ -248,11 +248,17 @@ def _render_mode(args) -> int:
 
     rows = queue.tag(rank_queue.rank(args.candidates))
 
+    # WR-04: annotations are keyed by the row's RANK (its 1-based position in the rendered
+    # table), not by sku [action] alone. The table (queue.render) enumerates rows from rank 1 in
+    # the SAME order, so a duplicate SKU or any future reordering between the two emissions can
+    # no longer mismatch a refusal annotation to the wrong row — the rank index is the shared
+    # row identity. The refusal is what tells the operator a raise is NOT actionable, so it must
+    # not drift from the row it refers to.
     annotations: list[str] = []
     rendered: list[QueueRow] = []
     can_auto_apply = bool(args.dryrun_resp and args.apply_resp and args.status_resp and args.find_echo)
 
-    for row in rows:
+    for rank, row in enumerate(rows, start=1):
         candidate = candidates.get((row.sku, row.entity), {})
         note = ""
         if row.cls == queue.NEEDS_APPROVAL:
@@ -292,7 +298,9 @@ def _render_mode(args) -> int:
             else:
                 note = "auto (standing-approved; apply inputs not supplied this run)"
         rendered.append(row)
-        annotations.append(f"  {row.sku} [{row.action_type}]: {note}")
+        # Prefix with the rank so the annotation ties to its table row by POSITION (WR-04),
+        # never by SKU string alone (which would mismatch a duplicate-SKU row).
+        annotations.append(f"  #{rank} {row.sku} [{row.action_type}]: {note}")
 
     sys.stdout.write(queue.render(rendered))
     sys.stdout.write("\n\nGate / apply annotations:\n")
