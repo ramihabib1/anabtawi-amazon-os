@@ -148,7 +148,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 
 - [x] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk (completed 2026-06-21)
 - [x] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend) (completed 2026-06-22)
-- [ ] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - First real writes land: pause / negative / bid-down under standing approval, idempotent, every action logged to `decisions.md` + `brain/raw/`; the dead-SKU spend bleed is stopped and the own-ASIN denylist enforced
+- [x] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - Apply spine built, pytest-green, and live-`dryRun`-validated (pause / negative / bid-down; idempotency ledger; own-ASIN denylist; magnitude cap). Stop-the-bleed batch correctly STOOD DOWN — live FIND verified the dead-SKU bleed was already eliminated (Rami's 2026-06-17 retarget + months-old pauses); no destructive write made. First *mutating* write deferred to Phase 9. (completed 2026-06-24)
 - [ ] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover
 - [ ] **Phase 10: New Coverage-Gap Campaigns + Archive Hygiene** - The lowest-reversibility moves run last: chained new-campaign builds (paced to in-stock inventory, with partial-build rollback), then the graveyard `CAMPAIGNS_REMOVE` archive in its own separately-approved final batch
 
@@ -200,8 +200,10 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] 08-01-PLAN.md — Wave 0: schema-pin recon (live actions_details_schema_get + dryRun fixtures) + result.py extension + RED test contracts (WRITE-03/06/07, EXEC-01)
 - [x] 08-02-PLAN.md — Wave 1: ledger.py (content-hash idempotency) + denylist.py + owned_asins.toml + seeded-permissive magnitude cap + A2 staleness window (WRITE-07, EXEC-01)
 - [x] 08-03-PLAN.md — Wave 2: apply.py spine + apply_action.py CLI + canary one-time confirm + decisions.md/brain log seam (WRITE-03/06/07, EXEC-01)
-- [ ] 08-04-PLAN.md — Wave 3: stop-the-bleed batch runbook + org-enable checkpoint + live canary acceptance (WRITE-03/06, EXEC-01)
+- [x] 08-04-PLAN.md — Wave 3: stop-the-bleed runbook authored; org-enable cleared; live FIND+dryRun proved the spine works against the real account; batch STOOD DOWN (bleed already $0 since 2026-06-17 — see decisions.md + brain/raw/2026-06-24) — no live mutation (WRITE-03/06 mutating-write deferred to Phase 9; EXEC-01 denylist enforced in code)
 **UI hint**: no
+
+**Phase 8 close-out note (2026-06-24):** SC-1/3/5 (spine mechanics, idempotency, magnitude cap, denylist) are met in hand-written pytest-green code + proven live via read-only FIND + `dryRun:true`. SC-4 (stop-the-bleed) was satisfied **before** this phase by Rami's 2026-06-17 manual retarget/pauses (logged in `state/decisions.md`) — the dead-SKU bleed is $0; running the batch would have been destructive to shared healthy campaigns, so it was correctly stood down. SC-2's "every applied write logs" had no applied write this phase. The first real **mutating** write lands in Phase 9 on a gate-passed, queue-surfaced target.
 
 ### Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up
 **Goal**: A daily, dollar-ranked, dry-run-validated queue of proposed PPC changes becomes the standing operating rhythm — each line showing current → proposed → expected effect with provenance — and gate-passed bid/budget raises fund the engine-verified efficient winners under explicit approval, never scaling onto immature attribution data, internal keyword competition, sub-cover stock, or below-benchmark conversion. (Runbook Waves 2–3.)
@@ -232,7 +234,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 |-------|----------------|--------|-----------|
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
-| 8. Reversible-Write Apply Spine + Stop-the-Bleed | 3/4 | In Progress|  |
+| 8. Reversible-Write Apply Spine + Stop-the-Bleed | 4/4 | Complete   | 2026-06-24 |
 | 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 0/0 | Not started | - |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
 

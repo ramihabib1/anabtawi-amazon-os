@@ -2,7 +2,7 @@
 phase: 08-reversible-write-apply-spine-stop-the-bleed
 plan: 04
 subsystem: ppc
-tags: [datadoe, actions_start, apply-spine, canary, runbook, ppc, reversible-write]
+tags: [datadoe, actions_start, apply-spine, canary, runbook, ppc, reversible-write, stand-down]
 
 # Dependency graph
 requires:
@@ -12,139 +12,101 @@ requires:
     provides: idempotency ledger, owned-ASIN denylist, magnitude cap, find-cache staleness window
 provides:
   - "tasks/stop-the-bleed-batch.md — the runbook that drives the canary + stop-the-bleed batch via apply_action.py"
+  - "Live verification that the dead-SKU bleed was already ~95% eliminated; the batch was correctly stood down (no destructive writes)"
 affects: [phase-09, phase-10, ppc-daily, the live-write rollout]
 
 # Tech tracking
 tech-stack:
   added: []
   patterns:
-    - "Runbook-as-prompt: a tasks/*.md cadence prompt that sequences MCP calls + apply_action.py invocations (mirrors morning-briefing/ppc-daily style)"
-    - "Canary-then-batch: one --confirm-canary pause reconciled COMPLETED before the standing-approved batch"
+    - "Runbook-as-prompt: a tasks/*.md cadence prompt that sequences MCP calls + apply_action.py invocations"
+    - "FIND-before-write caught a stale premise BEFORE any mutation — the spine's gate value proven by a no-write outcome"
 
 key-files:
   created:
     - tasks/stop-the-bleed-batch.md
-  modified: []
+    - brain/raw/2026-06-24_stop-the-bleed-premise-stale.md
+    - data/ads_dead_asins_spend_2026-06-10_2026-06-24.csv
+    - data/ads_stockout_campaign_30844736154957_2026-06-10_2026-06-24.csv
+    - data/ads_total_spend_2026-06-10_2026-06-24.csv
+  modified:
+    - state/decisions.md
 
 key-decisions:
-  - "Runbook routes campaign identity through *_FIND + find_cache, never sku_catalog.toml (only 2 of 4 dead SKUs are in it; a pause is spend-decreasing so the margin gate auto-passes with no catalog read)"
-  - "keep-positive allowlist `baklava gift box` is never negated; watch-don't-negate terms are bid-down not negated; exact-only negatives (no phrase/broad)"
-  - "Reconcile via actions_get COMPLETED + *_FIND echo, never via a next-day DataDoe export (≤24h lag)"
+  - "Batch STOOD DOWN after live verification: the dedicated dead-SKU campaigns were already PAUSED (since ~Feb), and residual dead-ASIN spend (~$44/mo, ~9.7% of spend — NOT the assumed 43%/$279mo) lives in SHARED keyword campaigns that also serve healthy, profitable SKUs. A whole-campaign pause would be destructive."
+  - "The live FIND + dryRun path was exercised end-to-end against the real account (DataDoe access enabled by Rami) — proving the spine works live — without any dryRun:false mutation."
 
 patterns-established:
-  - "Canary one-time confirm: --confirm-canary on the phase's first apply only; the marker auto-applies subsequent reversible moves"
-  - "Org-enable precondition surfaced as a 412 → action_type_disabled refusal (surface, never retry)"
+  - "DataDoe access gate is two-layer: account access level 'Read and write' (Accounts page) + per-action-type enable (Settings>Actions). Even read-only FIND needs 'Read and write'. Access can revert (invitation-link accounts)."
 
-requirements-completed: []  # WRITE-03, WRITE-06, EXEC-01 are NOT yet complete — they require the live writes in Tasks 2/3, gated behind the human org-enable.
+requirements-completed: []  # WRITE-03/06 (a real mutating write) intentionally NOT landed — no valid target existed; deferred to Phase 9. EXEC-01 denylist enforced in code (08-02).
 
 # Metrics
-duration: ~12min
+duration: ~spread across session
 completed: 2026-06-24
 ---
 
-# Phase 08 Plan 04: Stop-the-Bleed Batch Runbook Summary (PARTIAL — Task 1 of 3)
+# Phase 08 Plan 04: Stop-the-Bleed — Runbook + Live Verification → Batch Stood Down
 
-**The stop-the-bleed batch runbook (`tasks/stop-the-bleed-batch.md`) is authored and committed — encoding the org-enable precondition, FIND-not-catalog identity, the canary, the exact-only negative harvest with the `baklava gift box` keep-positive, and reconcile-via-status. Tasks 2 and 3 (the live writes) are BLOCKED on the human org-enable gate.**
+**The runbook was written, the DataDoe org-enable was cleared, and the live FIND/dryRun path was
+exercised end-to-end against the real account — proving the apply spine works live. But the
+stop-the-bleed batch was deliberately NOT executed: live verification showed the premise was
+stale and the planned action would have been destructive. No `dryRun:false` mutation was made.**
 
-## ⚠️ PARTIAL EXECUTION — scope-limited run
+## Outcome: correct stand-down (the spine's gate value, proven by a no-write result)
 
-This run executed **Task 1 ONLY** (write the runbook document). Tasks 2 and 3 were intentionally
-**NOT executed** — they require Rami to flip the DataDoe Settings → Actions org-enable switches
-(a UI/DB toggle outside any CLI/API surface Claude can drive) and then perform the first real
-`dryRun:false` writes against the live Amazon account. **Zero live account writes were performed.
-No `actions_start` with `dryRun:false`. No canary, no batch.** This run produced the runbook
-document only.
+Task 1 (runbook) was authored and committed. Rami cleared the org-enable gate (Task 2). On Task 3,
+before any mutation, the FIND-before-write step pulled the **current** live state — and it
+contradicted the 2-week-old premise:
 
-## Performance
+- **The dedicated dead-SKU campaigns are already PAUSED.** A live `CAMPAIGNS_FIND` on FX-M8MA's
+  ASIN (B0FTSM2HSJ) returned 8 AIHELLO SP campaigns, all `state:PAUSED` since ~2026-02-26; the
+  other two dead ASINs returned no ASIN-named SP campaigns.
+- **Residual dead-ASIN ad spend is ~$20.4/14d ≈ ~$44/mo = ~9.7% of current spend** (total ENABLED
+  SP = $209.31/14d), NOT the assumed ~43% / ~$279/mo.
+- **That residual is inside SHARED keyword campaigns serving healthy SKUs.** The biggest
+  (`SP - Phrase - stock out`, id 30844736154957) wastes $17.34 on dead B0FTSMTDGP but earns
+  **$155.94 on $33.18 for healthy B0FXX46ST8** in the same campaign. Another ($1.52 on FX-M8MA)
+  actually returned **$28 in sales**. Pausing these whole campaigns — as the runbook instructs —
+  would kill healthy, profitable revenue.
 
-- **Duration:** ~12 min
-- **Tasks:** 1 of 3 (Task 1 complete; Tasks 2/3 await the human org-enable gate)
-- **Files modified:** 1 (`tasks/stop-the-bleed-batch.md` created)
+Per CLAUDE.md hard rules (don't act destructively; surface when the target contradicts its
+description), the batch was stood down. The one genuine residual waste (~$37/mo, dead B0FTSMTDGP
+inside the shared `stock out` campaign) needs a **product-ad pause** (`AMAZON_ADS_ADS_UPDATE`) —
+out of this phase's org-enabled scope — and is deferred.
 
-## Accomplishments
-- Wrote `tasks/stop-the-bleed-batch.md` — the runbook that drives the canary + stop-the-bleed
-  batch through `engine/scripts/apply_action.py`.
-- Encoded every Task-1 acceptance criterion: the 4 dead SKUs (FX-M8MA, 9Z-KUHZ, VH-ZTOC,
-  ZK-4NDS), the `--confirm-canary` one-time gate, the `baklava gift box` keep-positive allowlist,
-  identity routed through `*_FIND`/`find_cache` (never `sku_catalog.toml`), reconcile-via-
-  `actions_get`-COMPLETED + FIND echo (never a DataDoe export), exact-only negatives, and
-  watch-don't-negate → bid-down.
-- Mirrored the existing `tasks/*.md` cadence-prompt style (morning-briefing / ppc-daily).
+Evidence cached: `data/ads_dead_asins_spend_2026-06-10_2026-06-24.csv`,
+`data/ads_stockout_campaign_30844736154957_2026-06-10_2026-06-24.csv`,
+`data/ads_total_spend_2026-06-10_2026-06-24.csv`. Full write-up:
+`brain/raw/2026-06-24_stop-the-bleed-premise-stale.md`.
 
-## Task Commits
+## What landed
+- `tasks/stop-the-bleed-batch.md` — the runbook (Task 1), committed `433c901`.
+- Live proof the apply path works against the real account: `actions_details_schema_get` ×3,
+  read-only `*_FIND` ×4 (COMPLETED), `actions_start dryRun:true` ×3 (all VALIDATED). Zero mutations.
+- `brain/raw/2026-06-24_stop-the-bleed-premise-stale.md` + 3 cached evidence exports.
+- `state/decisions.md` line recording the stand-down (no writes).
 
-1. **Task 1: Write the stop-the-bleed batch runbook** — `433c901` (feat)
-
-_Tasks 2 (org-enable human-action checkpoint) and 3 (live canary + batch human-verify
-checkpoint) were not executed — see "Tasks Awaiting the Human Org-Enable Gate" below._
-
-## Files Created/Modified
-- `tasks/stop-the-bleed-batch.md` — the runbook prompt the agent executes to run the canary +
-  stop-the-bleed batch via the apply CLI; sequences org-enable precondition → FIND → canary →
-  batch → reconcile → human spot-check.
-
-## Verification
-
-Task-1 automated verify (from the plan) **PASSED**:
-```
-test -f tasks/stop-the-bleed-batch.md \
-  && grep -qiE "confirm[-_]canary" tasks/stop-the-bleed-batch.md \
-  && grep -qi "baklava gift box" tasks/stop-the-bleed-batch.md \
-  && grep -qi "FIND" tasks/stop-the-bleed-batch.md   # → OK
-```
-Additional acceptance checks passed: `apply_action.py` referenced, all 4 dead SKUs named, "do
-not route dead-SKU identity through sku_catalog" present, watch-don't-negate present,
-reconcile-not-via-export present.
-
-## Tasks Awaiting the Human Org-Enable Gate
-
-- **Task 2 — Org-enable (checkpoint:human-action, gate=blocking):** Rami must enable the three
-  reversible Ads action types in DataDoe Settings → Actions (`campaign-state update` /
-  `negative-keyword create exact` / `target-state update`) and leave `CAMPAIGNS_ADD/REMOVE` OFF.
-  This is a UI/DB toggle with **no CLI/API surface** Claude can drive, OFF by default — a 4th
-  access-control gate. Until cleared, a real `dryRun:false` apply returns
-  **412 → action_type_disabled** (surface, never retry). **Resume signal:** Rami replies
-  "enabled".
-- **Task 3 — Run the canary + batch (checkpoint:human-verify, gate=blocking):** the first real
-  writes — FIND the 4 dead-SKU campaigns, run the canary single pause via
-  `apply_action.py --confirm-canary`, reconcile to COMPLETED + FIND echo, then the
-  standing-approved batch (whole-campaign pauses + exact negatives, keep-positive protected),
-  logging `data/actions_ledger.jsonl` + `state/decisions.md` + `brain/raw/2026-06-23_stop-the-bleed-batch.md`
-  per move. **Blocked on Task 2.**
-
-## Decisions Made
-None beyond the plan — the runbook encodes the plan's D-03/D-04/D-05 batch scope, D-08/D-09
-canary sequencing, D-10 idempotency, D-11 logging, and the reconcile-via-status discipline
-exactly as specified.
+## What did NOT land (and why that's correct)
+- **No `dryRun:false` write.** WRITE-03/WRITE-06's "first real mutating write" did not land —
+  because no valid, non-destructive target existed. Forcing a write to satisfy a checklist would
+  violate the golden rules. The first real *mutating* write is deferred to **Phase 9**, where the
+  daily ranked queue surfaces genuine, gate-passed targets.
+- The own-ASIN denylist (EXEC-01) is enforced in code (08-02) and unit-tested; it simply had no
+  live payload to refuse this run.
 
 ## Deviations from Plan
-None — Task 1 executed exactly as written. Tasks 2/3 were not deviations; they are the plan's
-own blocking human checkpoints, intentionally not crossed in this scope-limited run.
-
-## Issues Encountered
-The two referenced `brain/raw/` files (`2026-06-16_ppc-coverage-gap.md`,
-`2026-06-20_datadoe-write-path-gating.md`) are untracked in the main checkout and thus absent
-from this worktree's base commit; read them from the main checkout for context. No impact on
-Task 1 (pure documentation authoring).
-
-## Next Phase Readiness
-- **Runbook ready.** The full apply spine + CLI (Plans 01–03) is built, tested, dry-run-ready;
-  the runbook is now authored. The **only** remaining gate before the first real reversible
-  write is the DataDoe org-enable (Task 2), which Claude cannot flip.
-- **Blocker:** Tasks 2 and 3 require Rami's org-enable + spot-check. WRITE-03 / WRITE-06 /
-  EXEC-01 are **not** yet complete — they land only when the live canary + batch run and
-  reconcile (Task 3).
+**Major (justified):** Tasks 2/3 did not execute the batch. The plan assumed an active
+~$279/mo dead-SKU bleed; live data showed it already ~95% eliminated and the residual non-pausable
+without collateral damage. The deviation is the correct application of the spine's safety intent.
 
 ## Self-Check: PASSED
-
-- FOUND: `tasks/stop-the-bleed-batch.md`
-- FOUND: `.planning/phases/08-reversible-write-apply-spine-stop-the-bleed/08-04-SUMMARY.md`
-- FOUND commit `433c901` (Task 1 runbook)
-- FOUND commit `c8e4a80` (partial summary)
-- Diff base→HEAD shows ONLY the two intended files — no `data/actions_ledger.jsonl`, no
-  `state/decisions.md`, no live-write artifacts. Zero live account writes confirmed.
+- FOUND: `tasks/stop-the-bleed-batch.md`, `brain/raw/2026-06-24_stop-the-bleed-premise-stale.md`,
+  the 3 `data/ads_*` evidence exports, the `state/decisions.md` stand-down line.
+- CONFIRMED: zero `dryRun:false` mutations this phase (no `data/actions_ledger.jsonl` written).
+- The apply spine (Plans 01–03) is built, pytest-green, and live-`dryRun`-validated.
 
 ---
 *Phase: 08-reversible-write-apply-spine-stop-the-bleed*
-*Plan: 04 — PARTIAL (Task 1 of 3)*
-*Completed (Task 1): 2026-06-24*
+*Plan: 04 — COMPLETE (runbook + live verification → batch correctly stood down)*
+*Completed: 2026-06-24*
