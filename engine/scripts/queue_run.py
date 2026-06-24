@@ -269,7 +269,20 @@ def _render_mode(args) -> int:
             # A needs-approval row is NEVER auto-applied in render mode.
         else:  # AUTO — a standing-approved reversible: actually apply it (autonomy != silence).
             if can_auto_apply:
-                result = _auto_apply(candidate, args, args.marketplace)
+                # WR-03: wrap the queue-level auto-apply in logged_call (op + marketplace only;
+                # NEVER the seller UUID) so EVERY queue-initiated real write has a consistent
+                # audit record — mirroring _apply_mode. apply._logged_start_apply logs the inner
+                # start, but the queue-level decision to auto-fire was previously unlogged.
+                with habibos_logging.logged_call(
+                    "queue_run", marketplace=args.marketplace
+                ) as end_fields:
+                    result = _auto_apply(candidate, args, args.marketplace)
+                    # A refusal can NEVER serialize as applied — derive status from result TYPE.
+                    end_fields["status"] = (
+                        "refused"
+                        if isinstance(result, (Refusal, GateRefusal))
+                        else "applied"
+                    )
                 note = f"auto-applied -> {_status_of(result)}"
             else:
                 note = "auto (standing-approved; apply inputs not supplied this run)"
