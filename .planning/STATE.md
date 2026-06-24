@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: milestone
-status: executing
-last_updated: "2026-06-24T12:50:01.566Z"
-last_activity: 2026-06-24 -- Phase 09 execution started
+status: "Phase 09 CODE-COMPLETE (5/5 plans, full engine suite 83 passed) — the daily ranked queue is built, pytest-green, and the DataDoe write path is verified live (0 mutating writes ever). The first live spend-up (09-05 Task 3 human-verify checkpoint) is DEFERRED to a focused session: agentcentral expired (reads via DataDoe), 2026-06-16 winners are Phase-10 new-campaigns, and cached cover is ~3wk stale. Phase 9 live verification PENDING that session."
+last_updated: "2026-06-24T16:30:00.000Z"
+last_activity: 2026-06-24 -- Phase 09 code-complete; first live spend-up deferred to a focused session
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 17
-  completed_plans: 12
+  completed_plans: 17
   percent: 60
 ---
 
@@ -21,15 +21,19 @@ progress:
 
 - **Core value (M2):** Move the units already in FBA at a healthy, margin-derived TACOS (not a flat number) — turning reviewed PPC artifacts into real, approval-gated account changes via DataDoe `actions_start`, with the margin gate protecting net margin ≥ ~15% and zero autonomous spend-up.
 - **Milestone:** v2.0 — Execution Era (Gated PPC Write Path). PPC writes only; catalog refresh / restocks / listing writes deferred.
-- **Current focus:** Phase 09 — daily-ranked-queue-explicit-approval-spend-up
+- **Current focus:** Phase 09 — daily-ranked-queue-explicit-approval-spend-up (CODE-COMPLETE; live first-write deferred)
 - **Project mode:** execution-layer on the M1 read-only engine (agent does MCP I/O; hand-written, pytest-covered Python owns the money truth)
 
 ## Current Position
 
-Phase: 09 (daily-ranked-queue-explicit-approval-spend-up) — EXECUTING
-Plan: 1 of 5
-Status: Executing Phase 09
-Last activity: 2026-06-24 -- Phase 09 execution started
+Phase: 09 (daily-ranked-queue-explicit-approval-spend-up) — CODE-COMPLETE, LIVE VERIFICATION PENDING
+Plan: 5 of 5 plans complete (09-01..09-05 SUMMARYs written; full engine suite 83 passed / 5 skipped)
+Status: Daily ranked queue built + pytest-green; DataDoe write path verified live (0 mutating writes ever). 09-05 Task 3 (first live spend-up) DEFERRED to a focused session — see 09-05-HUMAN-UAT.md + brain/raw/2026-06-24_phase9-queue-live-findings.md.
+Last activity: 2026-06-24 -- Phase 09 code-complete; first live spend-up deferred
+
+### Outstanding (live, human-gated)
+- **First live spend-up (Phase 9 live goal).** Run the focused session: fresh FBA cover + matured ad-ACOS export → engine gate over the 16 ENABLED SP campaigns → `queue_run.py render` → dryRun best gate-passed budget_up → Rami confirm → `apply --approve` → reconcile + log. Also confirm a sub-cover SKU renders REFUSED and an over-ceiling raise is refused-not-clamped.
+- **agentcentral expired** — renew if the live-read tools (get_days_of_cover etc.) are wanted; otherwise reads stay on DataDoe exports.
 
 ## Performance Metrics
 

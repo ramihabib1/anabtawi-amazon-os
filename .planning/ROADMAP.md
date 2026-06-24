@@ -149,7 +149,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] **Phase 6: FIND + Lifecycle Substrate** - Prove the async write loop on no-ops: dryRun harness, `*_FIND` ID caching, `actions_get` poll classification, reconcile-not-via-export discipline — zero account risk (completed 2026-06-21)
 - [x] **Phase 7: Margin-Tiered Safety Gate** - The engine safety core ships and is pytest-covered: per-SKU margin → TACOS ceiling, refuses any spend-up that breaches the net-margin floor, refuses while min-margin threshold empty (hard predecessor to any real spend) (completed 2026-06-22)
 - [x] **Phase 8: Reversible-Write Apply Spine + Stop-the-Bleed** - Apply spine built, pytest-green, and live-`dryRun`-validated (pause / negative / bid-down; idempotency ledger; own-ASIN denylist; magnitude cap). Stop-the-bleed batch correctly STOOD DOWN — live FIND verified the dead-SKU bleed was already eliminated (Rami's 2026-06-17 retarget + months-old pauses); no destructive write made. First *mutating* write deferred to Phase 9. (completed 2026-06-24)
-- [ ] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover
+- [x] **Phase 9: Daily Ranked Queue + Explicit-Approval Spend-Up** - A daily dollar-ranked, dry-run'd queue surfaces moves; gate-passed bid/budget raises fund verified winners under explicit approval, respecting attribution lag and inventory cover (completed 2026-06-24)
 - [ ] **Phase 10: New Coverage-Gap Campaigns + Archive Hygiene** - The lowest-reversibility moves run last: chained new-campaign builds (paced to in-stock inventory, with partial-build rollback), then the graveyard `CAMPAIGNS_REMOVE` archive in its own separately-approved final batch
 
 ## Phase Details (M2)
@@ -220,7 +220,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 - [x] 09-02-PLAN.md — Wave 2: cover_gate.py — the inventory + conversion spend-up gate (refuse sub-cover/sub-conversion, never clamp) (EXEC-05)
 - [x] 09-03-PLAN.md — Wave 2: rank_queue.py + QueueRow — the expected-$/wk estimator + dollars-first ranker (None-estimate rows last) (QUEUE-01)
 - [x] 09-04-PLAN.md — Wave 3: queue.py — the auto-vs-needs-approval class-tagger + dollar-ranked table renderer (QUEUE-01/02/03)
-- [ ] 09-05-PLAN.md — Wave 4: harvest.py (two-class attribution + internal-competition + graduation) + queue_run.py CLI (rank → gate → render → batch-approval → apply spine) + live checkpoint (WRITE-04, QUEUE-02/04, EXEC-02)
+- [x] 09-05-PLAN.md — Wave 4: harvest.py (two-class attribution + internal-competition + graduation) + queue_run.py CLI (rank → gate → render → batch-approval → apply spine) + live checkpoint (WRITE-04, QUEUE-02/04, EXEC-02)
 
 ### Phase 10: New Coverage-Gap Campaigns + Archive Hygiene
 **Goal**: The lowest-reversibility moves run last and separately — chained new-campaign builds (paced to in-stock inventory, with partial-build detection and rollback so no orphan ENABLED empty campaign spends), then the campaign-graveyard archive via `CAMPAIGNS_REMOVE` in its own explicitly-approved final batch with per-ID pre-checks. (Runbook Waves 4–5.)
@@ -240,7 +240,7 @@ A **risk-ascending** build: a zero-account-risk async substrate (FIND + lifecycl
 | 6. FIND + Lifecycle Substrate | 4/4 | Complete   | 2026-06-21 |
 | 7. Margin-Tiered Safety Gate | 4/4 | Complete   | 2026-06-22 |
 | 8. Reversible-Write Apply Spine + Stop-the-Bleed | 4/4 | Complete   | 2026-06-24 |
-| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 4/5 | In Progress|  |
+| 9. Daily Ranked Queue + Explicit-Approval Spend-Up | 5/5 | Complete   | 2026-06-24 |
 | 10. New Coverage-Gap Campaigns + Archive Hygiene | 0/0 | Not started | - |
 
 ---
